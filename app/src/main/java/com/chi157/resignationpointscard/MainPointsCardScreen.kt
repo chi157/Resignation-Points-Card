@@ -44,7 +44,8 @@ fun MainPointsCardScreen(
     viewModel: AppViewModel,
     onNavigateToSettings: () -> Unit,
     onNavigateToPlan: () -> Unit,
-    onNavigateToRecord: () -> Unit
+    onNavigateToRecord: () -> Unit,
+    onNavigateToSuccess: () -> Unit
 ) {
     val settings by viewModel.settings.collectAsState()
     val allStamps by viewModel.allStamps.collectAsState()
@@ -230,7 +231,7 @@ fun MainPointsCardScreen(
                     ),
                     shape = RoundedCornerShape(4.dp)
                 ) {
-                    Text(text = "👍 開始新卡片 👍", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "👍 接下來~? 👍", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 }
                 
             } else {
@@ -299,16 +300,16 @@ fun MainPointsCardScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // 1. 不要，我要離職
                         Button(
                             onClick = { 
-                                // TODO: 跳轉到離職畫面
                                 showFullCardDialog = false
+                                onNavigateToSuccess()
                             },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE74C3C))
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE74C3C)),
+                            shape = RoundedCornerShape(4.dp)
                         ) {
-                            Text("不要，我要離職", color = Color.White)
+                            Text("不要，我要離職", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                         
                         // 2. 再給一次機會

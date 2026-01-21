@@ -30,6 +30,7 @@ sealed class Screen(val route: String) {
     object Plan : Screen("plan")
     object Record : Screen("record")
     object Settings : Screen("settings")
+    object Success : Screen("success")
 }
 
 @Composable
@@ -102,7 +103,8 @@ fun AppNavigation(
                 viewModel = viewModel,
                 onNavigateToPlan = { navController.navigate(Screen.Plan.route) },
                 onNavigateToRecord = { navController.navigate(Screen.Record.route) },
-                onNavigateToSettings = { navController.navigate(Screen.Settings.route) }
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                onNavigateToSuccess = { navController.navigate(Screen.Success.route) }
             )
         }
         
@@ -128,6 +130,21 @@ fun AppNavigation(
                     }
                 },
                 navController = navController
+            )
+        }
+        
+        // 8. 離職成功畫面
+        composable(Screen.Success.route) {
+            ResignationSuccessScreen(
+                viewModel = viewModel,
+                onNavigateToMain = {
+                    navController.navigate(Screen.Main.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onNavigateToRecord = {
+                    navController.navigate(Screen.Record.route)
+                }
             )
         }
     }
