@@ -9,5 +9,20 @@ data class AppSettings(
     val companyName: String = "",
     val selectedTheme: String = "", // 預設為空，用戶選擇後填入
     val targetStamps: Int = 0, // 預設為 0
-    val isOnboardingCompleted: Boolean = false
+    val isOnboardingCompleted: Boolean = false,
+    
+    // 離職計畫相關
+    val targetFund: Long = 0,
+    val currentFund: Long = 0,
+    val isResumeReady: Boolean = false
+)
+
+@Entity(tableName = "todo_items")
+data class TodoItem(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val content: String,
+    val isDone: Boolean = false,
+    val createdAt: Long = System.currentTimeMillis(),
+    val startTimeMillis: Long? = null,
+    val deadlineTimeMillis: Long? = null
 )

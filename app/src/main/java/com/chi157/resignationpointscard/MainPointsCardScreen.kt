@@ -327,25 +327,25 @@ fun MainBottomNavigation(currentRoute: String, onNavigate: (String) -> Unit) {
             label = "集點卡",
             icon = Icons.Default.Home,
             isSelected = currentRoute == Screen.Main.route,
-            onClick = { /* Already here */ }
+            onClick = { onNavigate(Screen.Main.route) }
         )
         BottomNavItem(
             label = "離職計畫",
             icon = Icons.Default.Check,
-            isSelected = false,
-            onClick = { onNavigate("plan") }
+            isSelected = currentRoute == Screen.Plan.route,
+            onClick = { onNavigate(Screen.Plan.route) }
         )
         BottomNavItem(
             label = "離職紀錄",
             icon = Icons.Default.Info,
-            isSelected = false,
-            onClick = { onNavigate("record") }
+            isSelected = currentRoute == Screen.Record.route,
+            onClick = { onNavigate(Screen.Record.route) }
         )
         BottomNavItem(
             label = "設定",
             icon = Icons.Default.Settings,
-            isSelected = false,
-            onClick = { onNavigate("settings") }
+            isSelected = currentRoute == Screen.Settings.route,
+            onClick = { onNavigate(Screen.Settings.route) }
         )
     }
 }

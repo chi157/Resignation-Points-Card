@@ -106,14 +106,14 @@ fun AppNavigation(
             )
         }
         
-        // 5. 離職計畫 (暫時 Placeholder)
+        // 5. 離職計畫
         composable(Screen.Plan.route) {
-            TabPlaceholder(title = "離職計畫", viewModel = viewModel, navController = navController)
+            ResignationPlanScreen(viewModel = viewModel, navController = navController)
         }
         
         // 6. 離職紀錄 (暫時 Placeholder)
         composable(Screen.Record.route) {
-            TabPlaceholder(title = "離職紀錄", viewModel = viewModel, navController = navController)
+            TabPlaceholder(route = Screen.Record.route, title = "離職紀錄", viewModel = viewModel, navController = navController)
         }
         
         // 7. 設定畫面
@@ -195,11 +195,11 @@ fun SettingsScreen(
 }
 
 @Composable
-fun TabPlaceholder(title: String, viewModel: AppViewModel, navController: NavHostController) {
+fun TabPlaceholder(route: String, title: String, viewModel: AppViewModel, navController: NavHostController) {
     Scaffold(
         bottomBar = {
-            MainBottomNavigation(currentRoute = title, onNavigate = { route ->
-                navController.navigate(route)
+            MainBottomNavigation(currentRoute = route, onNavigate = { targetRoute ->
+                navController.navigate(targetRoute)
             })
         },
         containerColor = DarkBlueBackground

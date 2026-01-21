@@ -33,6 +33,15 @@ interface AppSettingsDao {
     @Query("UPDATE app_settings SET isOnboardingCompleted = :completed WHERE id = 1")
     suspend fun updateOnboardingCompleted(completed: Boolean)
     
+    @Query("UPDATE app_settings SET targetFund = :fund WHERE id = 1")
+    suspend fun updateTargetFund(fund: Long)
+
+    @Query("UPDATE app_settings SET currentFund = :fund WHERE id = 1")
+    suspend fun updateCurrentFund(fund: Long)
+
+    @Query("UPDATE app_settings SET isResumeReady = :ready WHERE id = 1")
+    suspend fun updateResumeReady(ready: Boolean)
+    
     @Query("DELETE FROM app_settings")
     suspend fun deleteAllSettings()
 }

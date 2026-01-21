@@ -7,6 +7,7 @@ import com.chi157.resignationpointscard.data.AppDatabase
 import com.chi157.resignationpointscard.data.AppRepository
 import com.chi157.resignationpointscard.data.AppSettings
 import com.chi157.resignationpointscard.data.StampRecord
+import com.chi157.resignationpointscard.data.TodoItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,9 +37,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _isStampedToday = MutableStateFlow(false)
     val isStampedToday: StateFlow<Boolean> = _isStampedToday.asStateFlow()
     
+    // 待辦事項
+    private val _allTodos = MutableStateFlow<List<TodoItem>>(emptyList())
+    val allTodos: StateFlow<List<TodoItem>> = _allTodos.asStateFlow()
+    
     init {
         val database = AppDatabase.getDatabase(application)
-        repository = AppRepository(database.appSettingsDao(), database.stampRecordDao())
+        repository = AppRepository(
+            database.appSettingsDao(), 
+            database.stampRecordDao(),
+            database.todoDao()
+        )
         
         // 初始化設定
         viewModelScope.launch {
@@ -57,6 +66,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     _isStampedToday.value = checkIfStampedToday(stamps)
                     _isLoading.value = false
                 }
+            }
+            
+            launch {
+                repository.allTodos.collect { _allTodos.value = it }
             }
         }
     }
@@ -117,6 +130,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.completeOnboarding()
         }
     }
+    
+    fun saveTargetFund(fund: Long) = viewModelScope.launch { repository.updateTargetFund(fund) }
+    fun saveCurrentFund(fund: Long) = viewModelScope.launch { repository.updateCurrentFund(fund) }
+    fun toggleResumeReady(ready: Boolean) = viewModelScope.launch { repository.updateResumeReady(ready) }
+    
+    fun addTodo(item: TodoItem) = viewModelScope.launch { repository.addTodo(item) }
+    fun updateTodo(item: TodoItem) = viewModelScope.launch { repository.updateTodo(item) }
+    fun deleteTodo(item: TodoItem) = viewModelScope.launch { repository.deleteTodo(item) }
     
     fun resetAllData() {
         viewModelScope.launch {
