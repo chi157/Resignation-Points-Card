@@ -1,0 +1,373 @@
+package com.chi157.resignationpointscard
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.chi157.resignationpointscard.data.AppSettings
+import com.chi157.resignationpointscard.data.StampRecord
+import com.chi157.resignationpointscard.ui.theme.DarkBlueBackground
+import java.text.SimpleDateFormat
+import java.util.*
+
+@Composable
+fun MainPointsCardScreen(
+    viewModel: AppViewModel,
+    onNavigateToSettings: () -> Unit,
+    onNavigateToPlan: () -> Unit,
+    onNavigateToRecord: () -> Unit
+) {
+    val settings by viewModel.settings.collectAsState()
+    val allStamps by viewModel.allStamps.collectAsState()
+    val isStampedToday by viewModel.isStampedToday.collectAsState()
+    val angryCounter by viewModel.angryCounter.collectAsState()
+    
+    var showStampDialog by remember { mutableStateOf(false) }
+    var showAngryDialog by remember { mutableStateOf(false) }
+    var showSuccessAnimation by remember { mutableStateOf(false) }
+
+    // 計算當前卡片資訊
+    val targetStamps = settings?.targetStamps?.takeIf { it > 0 } ?: 30
+    val totalStamps = allStamps.size
+    val currentCardIndex = (totalStamps / targetStamps) + 1
+    val currentCardStamps = allStamps.filter { it.cardIndex == currentCardIndex }
+    val stampsOnThisCard = currentCardStamps.size
+
+    Scaffold(
+        bottomBar = {
+            MainBottomNavigation(
+                currentRoute = Screen.Main.route,
+                onNavigate = { route ->
+                    when (route) {
+                        "settings" -> onNavigateToSettings()
+                        "plan" -> onNavigateToPlan()
+                        "record" -> onNavigateToRecord()
+                    }
+                }
+            )
+        },
+        containerColor = Color(0xFFD2B48C) // 羊皮紙色背景 (度假模式)
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // 標題
+            Text(
+                text = "${settings?.companyName} 離職集點卡",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2C3E50)
+            )
+            
+            // 日期
+            val dateFormat = SimpleDateFormat("yyyy.MM.dd (E)", Locale.TAIWAN)
+            Text(
+                text = dateFormat.format(Date()),
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .background(Color(0xFF2C3E50), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                color = Color.White,
+                fontSize = 14.sp
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 卡片進度欄
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(2.dp, Color(0xFF8B4513), RoundedCornerShape(4.dp))
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "第 $currentCardIndex 張卡片",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+                
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xFF4ECDC4), RoundedCornerShape(4.dp))
+                        .border(1.dp, Color(0xFF2C3E50), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "$stampsOnThisCard / $targetStamps",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 集點卡本體
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .border(3.dp, Color(0xFFCD853F), RoundedCornerShape(16.dp))
+                    .background(Color(0xFFFFFAFA), RoundedCornerShape(16.dp))
+                    .padding(16.dp)
+            ) {
+                StampGrid(
+                    targetStamps = targetStamps,
+                    stampedPositions = currentCardStamps.map { it.stampPosition }.toSet()
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 蓋章按鈕
+            if (isStampedToday && angryCounter < 5) {
+                Button(
+                    onClick = { viewModel.incrementAngryCounter() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF536162)),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(text = "✓ 今日已蓋章 ✓", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                }
+                
+                Text(
+                    text = "明天再來吧",
+                    color = Color.Gray,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            } else {
+                // 蓋章按鈕 (或觸發彩蛋後的按鈕)
+                Button(
+                    onClick = { 
+                        if (angryCounter >= 5) showAngryDialog = true else showStampDialog = true 
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (angryCounter >= 5) Color(0xFFE74C3C) else Color(0xFF2C3E50)
+                    ),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    val btnText = if (angryCounter >= 5) "蓋章發洩！" else "✔ 我要蓋章"
+                    Text(text = btnText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // --- 彈窗處理 ---
+
+        // 1. 蓋章原因彈窗
+        if (showStampDialog) {
+            AlertDialog(
+                onDismissRequest = { showStampDialog = false },
+                title = { Text("今日離職值 +1", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column {
+                        Text("為什麼今日想離職？", fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
+                        var reasonText by remember { mutableStateOf("") }
+                        OutlinedTextField(
+                            value = reasonText,
+                            onValueChange = { reasonText = it },
+                            placeholder = { Text("例：老闆又在畫大餅...") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        
+                        Row(modifier = Modifier.padding(top = 16.dp)) {
+                            Button(
+                                onClick = {
+                                    viewModel.addStamp(reasonText)
+                                    showStampDialog = false
+                                    showSuccessAnimation = true
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C3E50))
+                            ) {
+                                Text("確認蓋章", color = Color.White)
+                            }
+                        }
+                    }
+                },
+                confirmButton = {}
+            )
+        }
+
+        // 2. 「真的很生氣」彩蛋彈窗
+        if (showAngryDialog) {
+            AlertDialog(
+                onDismissRequest = { showAngryDialog = false },
+                icon = { Text("💢", fontSize = 40.sp) },
+                title = { Text("真的很生氣！！！", fontWeight = FontWeight.Bold, color = Color.Red) },
+                text = { Text("受不了了，今天想蓋幾章就蓋幾章！\n不要阻止我！", textAlign = TextAlign.Center) },
+                confirmButton = {
+                    Button(
+                        onClick = { 
+                            showAngryDialog = false
+                            showStampDialog = true // 接著去輸入原因
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    ) {
+                        Text("現在就蓋！")
+                    }
+                }
+            )
+        }
+
+        // 3. 蓋章成功遮罩 (簡單實作)
+        if (showSuccessAnimation) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.7f))
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("☀️", fontSize = 80.sp)
+                        Text(
+                            text = "蓋章成功！",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                        Text(text = "離自由又更近一步了", color = Color.Gray)
+                        
+                        Button(
+                            onClick = { showSuccessAnimation = false },
+                            modifier = Modifier.padding(top = 24.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C3E50))
+                        ) {
+                            Text("返回")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StampGrid(targetStamps: Int, stampedPositions: Set<Int>) {
+    val columns = if (targetStamps <= 10) 5 else 6
+    
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(columns),
+        contentPadding = PaddingValues(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(targetStamps) { index ->
+            val position = index + 1
+            val isStamped = stampedPositions.contains(position)
+            
+            Box(
+                modifier = Modifier
+                    .aspectRatio(1f)
+                    .background(
+                        if (isStamped) Color(0xFFFFD89C) else Color(0xFFEEEEEE),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .border(
+                        1.dp,
+                        if (isStamped) Color(0xFFFF8C42) else Color(0xFFCCCCCC),
+                        RoundedCornerShape(8.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isStamped) {
+                    Text(text = "☀️", fontSize = 20.sp)
+                } else {
+                    Text(text = "$position", color = Color.Gray, fontSize = 12.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MainBottomNavigation(currentRoute: String, onNavigate: (String) -> Unit) {
+    NavigationBar(
+        containerColor = Color.Black,
+        contentColor = Color.White
+    ) {
+        BottomNavItem(
+            label = "集點卡",
+            icon = Icons.Default.Home,
+            isSelected = currentRoute == Screen.Main.route,
+            onClick = { /* Already here */ }
+        )
+        BottomNavItem(
+            label = "離職計畫",
+            icon = Icons.Default.Check,
+            isSelected = false,
+            onClick = { onNavigate("plan") }
+        )
+        BottomNavItem(
+            label = "離職紀錄",
+            icon = Icons.Default.Info,
+            isSelected = false,
+            onClick = { onNavigate("record") }
+        )
+        BottomNavItem(
+            label = "設定",
+            icon = Icons.Default.Settings,
+            isSelected = false,
+            onClick = { onNavigate("settings") }
+        )
+    }
+}
+
+@Composable
+fun RowScope.BottomNavItem(
+    label: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    NavigationBarItem(
+        icon = { Icon(icon, contentDescription = label) },
+        label = { Text(label, fontSize = 10.sp) },
+        selected = isSelected,
+        onClick = onClick,
+        colors = NavigationBarItemDefaults.colors(
+            selectedIconColor = Color(0xFFFFD700),
+            selectedTextColor = Color(0xFFFFD700),
+            unselectedIconColor = Color.White,
+            unselectedTextColor = Color.White,
+            indicatorColor = Color.Transparent
+        )
+    )
+}

@@ -27,6 +27,9 @@ sealed class Screen(val route: String) {
     object StampCountSelection : Screen("stamp_count_selection")
     object ThemeSelection : Screen("theme_selection")
     object Main : Screen("main")
+    object Plan : Screen("plan")
+    object Record : Screen("record")
+    object Settings : Screen("settings")
 }
 
 @Composable
@@ -93,68 +96,72 @@ fun AppNavigation(
             )
         }
         
-        // 主畫面（暫時用文字顯示）
+        // 4. 正式主畫面 (集點卡)
         composable(Screen.Main.route) {
-            MainPlaceholder(
+            MainPointsCardScreen(
+                viewModel = viewModel,
+                onNavigateToPlan = { navController.navigate(Screen.Plan.route) },
+                onNavigateToRecord = { navController.navigate(Screen.Record.route) },
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) }
+            )
+        }
+        
+        // 5. 離職計畫 (暫時 Placeholder)
+        composable(Screen.Plan.route) {
+            TabPlaceholder(title = "離職計畫", viewModel = viewModel, navController = navController)
+        }
+        
+        // 6. 離職紀錄 (暫時 Placeholder)
+        composable(Screen.Record.route) {
+            TabPlaceholder(title = "離職紀錄", viewModel = viewModel, navController = navController)
+        }
+        
+        // 7. 設定畫面
+        composable(Screen.Settings.route) {
+            SettingsScreen(
                 settings = settings,
                 onReset = { 
                     viewModel.resetAllData()
-                }
+                    navController.navigate(Screen.CompanyName.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                navController = navController
             )
         }
     }
 }
 
 @Composable
-fun MainPlaceholder(
+fun SettingsScreen(
     settings: com.chi157.resignationpointscard.data.AppSettings?,
-    onReset: () -> Unit
+    onReset: () -> Unit,
+    navController: NavHostController
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DarkBlueBackground)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // 顯示目前的設定資訊
-        Card(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.1f))
+    Scaffold(
+        bottomBar = {
+            MainBottomNavigation(currentRoute = Screen.Settings.route, onNavigate = { route ->
+                navController.navigate(route)
+            })
+        },
+        containerColor = DarkBlueBackground
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(24.dp)
         ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text(
-                    text = "--- 測試資訊 ---",
-                    color = Color.Yellow,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(text = "公司：${settings?.companyName}", color = Color.White)
-                Text(text = "格數：${settings?.targetStamps}", color = Color.White)
-                Text(text = "主題：${settings?.selectedTheme}", color = Color.White)
-            }
-        }
-
-        Text(
-            text = "暫時的主畫面",
-            style = MaterialTheme.typography.headlineMedium,
-            color = Color.White,
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(64.dp))
-
-        // 重置按鈕區塊 (參考設計稿樣式)
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                Text(text = "🔄", modifier = Modifier.padding(end = 8.dp))
-                Text(text = "重置", color = Color.White, fontWeight = FontWeight.Bold)
-            }
+            Text(
+                text = "設定",
+                style = MaterialTheme.typography.headlineMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
             
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // 重置按鈕區塊
             Surface(
                 onClick = onReset,
                 modifier = Modifier
@@ -165,9 +172,7 @@ fun MainPlaceholder(
                 shape = RoundedCornerShape(4.dp)
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -180,9 +185,30 @@ fun MainPlaceholder(
                             fontSize = 18.sp
                         )
                     }
-                    Text(text = "〉", color = Color(0xFFD32F2F))
                 }
             }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(text = "離職集點卡 ver 1.0", color = Color.Gray, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+fun TabPlaceholder(title: String, viewModel: AppViewModel, navController: NavHostController) {
+    Scaffold(
+        bottomBar = {
+            MainBottomNavigation(currentRoute = title, onNavigate = { route ->
+                navController.navigate(route)
+            })
+        },
+        containerColor = DarkBlueBackground
+    ) { padding ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = title, color = Color.White, fontSize = 24.sp)
         }
     }
 }

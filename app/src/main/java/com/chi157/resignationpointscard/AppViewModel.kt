@@ -6,9 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.chi157.resignationpointscard.data.AppDatabase
 import com.chi157.resignationpointscard.data.AppRepository
 import com.chi157.resignationpointscard.data.AppSettings
+import com.chi157.resignationpointscard.data.StampRecord
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import java.util.*
 import kotlinx.coroutines.launch
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
@@ -21,17 +24,73 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
     
+    // 蓋章相關狀態
+    private val _allStamps = MutableStateFlow<List<StampRecord>>(emptyList())
+    val allStamps: StateFlow<List<StampRecord>> = _allStamps.asStateFlow()
+    
+    // 彩蛋計數器 (連續按「明天再來吧」的次數)
+    private val _angryCounter = MutableStateFlow(0)
+    val angryCounter: StateFlow<Int> = _angryCounter.asStateFlow()
+    
+    // 判斷今日是否已蓋章 (不包含彩蛋觸發後的狀態)
+    private val _isStampedToday = MutableStateFlow(false)
+    val isStampedToday: StateFlow<Boolean> = _isStampedToday.asStateFlow()
+    
     init {
         val database = AppDatabase.getDatabase(application)
-        repository = AppRepository(database.appSettingsDao())
+        repository = AppRepository(database.appSettingsDao(), database.stampRecordDao())
         
         // 初始化設定
         viewModelScope.launch {
             repository.initializeSettings()
-            repository.settings.collect { settings ->
-                _settings.value = settings
-                _isLoading.value = false
+            
+            // 合併設定與紀錄的監聽
+            launch {
+                repository.settings.collect { settings ->
+                    _settings.value = settings
+                }
             }
+            
+            launch {
+                repository.allStamps.collect { stamps ->
+                    _allStamps.value = stamps
+                    _isStampedToday.value = checkIfStampedToday(stamps)
+                    _isLoading.value = false
+                }
+            }
+        }
+    }
+    
+    private fun checkIfStampedToday(stamps: List<StampRecord>): Boolean {
+        if (stamps.isEmpty()) return false
+        val today = Calendar.getInstance()
+        val lastStamp = Calendar.getInstance().apply { 
+            timeInMillis = stamps.first().dateMillis 
+        }
+        return today.get(Calendar.YEAR) == lastStamp.get(Calendar.YEAR) &&
+               today.get(Calendar.DAY_OF_YEAR) == lastStamp.get(Calendar.DAY_OF_YEAR)
+    }
+    
+    fun incrementAngryCounter() {
+        _angryCounter.value += 1
+    }
+    
+    fun resetAngryCounter() {
+        _angryCounter.value = 0
+    }
+    
+    fun addStamp(reason: String, isAngry: Boolean = false) {
+        viewModelScope.launch {
+            val settings = _settings.value ?: return@launch
+            val stamps = _allStamps.value
+            
+            val totalStamps = stamps.size
+            val targetStamps = settings.targetStamps.takeIf { it > 0 } ?: 30
+            val cardIndex = (totalStamps / targetStamps) + 1
+            val position = (totalStamps % targetStamps) + 1
+            
+            repository.addStamp(cardIndex, position, reason, isAngry)
+            resetAngryCounter()
         }
     }
     
