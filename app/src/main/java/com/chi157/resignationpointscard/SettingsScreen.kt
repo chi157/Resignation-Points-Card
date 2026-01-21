@@ -274,7 +274,7 @@ fun SettingsScreen(
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    Text("小工具背景顏色 (樣式會輪流出現)", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(bottom = 12.dp))
+                    Text("桌面小工具背景顏色 (樣式會輪流出現)", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(bottom = 12.dp))
                     
                     var showColorPicker1 by remember { mutableStateOf(false) }
                     var showColorPicker2 by remember { mutableStateOf(false) }
