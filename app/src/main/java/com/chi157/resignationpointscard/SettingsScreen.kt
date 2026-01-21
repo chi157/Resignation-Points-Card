@@ -377,7 +377,7 @@ fun ThemeOption(name: String, isSelected: Boolean, color: Color, icon: String, o
             text = name,
             fontSize = 12.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-            color = if (isSelected) Color.White else Color.Gray,
+            color = if (isSelected) Color(0xFF3498DB) else Color.Gray,
             modifier = Modifier.padding(top = 4.dp),
             textAlign = TextAlign.Center
         )

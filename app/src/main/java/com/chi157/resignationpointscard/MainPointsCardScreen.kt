@@ -58,6 +58,17 @@ fun MainPointsCardScreen(
     val currentCardIndex = (totalStamps / targetStamps) + 1
     val currentCardStamps = allStamps.filter { it.cardIndex == currentCardIndex }
     val stampsOnThisCard = currentCardStamps.size
+    
+    // 解析主題
+    val currentTheme = try {
+        if (settings?.selectedTheme.isNullOrEmpty()) {
+            CardTheme.VACATION_MODE
+        } else {
+            CardTheme.valueOf(settings!!.selectedTheme)
+        }
+    } catch (e: Exception) {
+        CardTheme.VACATION_MODE
+    }
 
     Scaffold(
         bottomBar = {
@@ -72,7 +83,7 @@ fun MainPointsCardScreen(
                 }
             )
         },
-        containerColor = Color(0xFFD2B48C) // 羊皮紙色背景 (度假模式)
+        containerColor = currentTheme.screenBackgroundColor
     ) { padding ->
         Column(
             modifier = Modifier
@@ -86,7 +97,7 @@ fun MainPointsCardScreen(
                 text = "${settings?.companyName} 離職集點卡",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2C3E50)
+                color = currentTheme.primaryTextColor
             )
             
             // 日期
@@ -95,9 +106,9 @@ fun MainPointsCardScreen(
                 text = dateFormat.format(Date()),
                 modifier = Modifier
                     .padding(vertical = 8.dp)
-                    .background(Color(0xFF2C3E50), RoundedCornerShape(4.dp))
+                    .background(currentTheme.dateBackgroundColor, RoundedCornerShape(4.dp))
                     .padding(horizontal = 12.dp, vertical = 4.dp),
-                color = Color.White,
+                color = Color.White, // 日期文字固定白色
                 fontSize = 14.sp
             )
 
@@ -107,7 +118,12 @@ fun MainPointsCardScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(2.dp, Color(0xFF8B4513), RoundedCornerShape(4.dp))
+                    .background(currentTheme.progressSectionBackgroundColor, RoundedCornerShape(4.dp))
+                    .border(
+                        width = if (currentTheme == CardTheme.VACATION_MODE) 2.dp else 0.dp, 
+                        color = if (currentTheme == CardTheme.VACATION_MODE) Color(0xFF8B4513) else Color.Transparent, 
+                        shape = RoundedCornerShape(4.dp)
+                    )
                     .padding(12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -115,18 +131,19 @@ fun MainPointsCardScreen(
                 Text(
                     text = "第 $currentCardIndex 張卡片",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    fontSize = 18.sp,
+                    color = if (currentTheme == CardTheme.VACATION_MODE) Color.Black else Color.Black // 確保在白色背景上也是黑色
                 )
                 
                 Box(
                     modifier = Modifier
-                        .background(Color(0xFF4ECDC4), RoundedCornerShape(4.dp))
-                        .border(1.dp, Color(0xFF2C3E50), RoundedCornerShape(4.dp))
+                        .background(currentTheme.countBadgeColor, RoundedCornerShape(4.dp)) // 黃色或綠色或藍綠色
+                        .border(1.dp, Color.Black, RoundedCornerShape(4.dp))
                         .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = "$stampsOnThisCard / $targetStamps",
-                        color = Color.White,
+                        color = Color.Black,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -139,13 +156,14 @@ fun MainPointsCardScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .border(3.dp, Color(0xFFCD853F), RoundedCornerShape(16.dp))
-                    .background(Color(0xFFFFFAFA), RoundedCornerShape(16.dp))
+                    .border(3.dp, currentTheme.borderColor, RoundedCornerShape(16.dp))
+                    .background(currentTheme.cardBackground, RoundedCornerShape(16.dp))
                     .padding(16.dp)
             ) {
                 StampGrid(
                     targetStamps = targetStamps,
-                    stampedPositions = currentCardStamps.map { it.stampPosition }.toSet()
+                    stampedPositions = currentCardStamps.map { it.stampPosition }.toSet(),
+                    theme = currentTheme
                 )
             }
 
@@ -325,7 +343,7 @@ fun MainPointsCardScreen(
 }
 
 @Composable
-fun StampGrid(targetStamps: Int, stampedPositions: Set<Int>) {
+fun StampGrid(targetStamps: Int, stampedPositions: Set<Int>, theme: CardTheme) {
     val columns = if (targetStamps <= 10) 5 else 6
     
     LazyVerticalGrid(
@@ -342,12 +360,12 @@ fun StampGrid(targetStamps: Int, stampedPositions: Set<Int>) {
                 modifier = Modifier
                     .aspectRatio(1f)
                     .background(
-                        if (isStamped) Color(0xFFFFD89C) else Color(0xFFEEEEEE),
+                        if (isStamped) Color(0xFFFFD89C) else theme.emptySlotColor,
                         RoundedCornerShape(8.dp)
                     )
                     .border(
                         1.dp,
-                        if (isStamped) Color(0xFFFF8C42) else Color(0xFFCCCCCC),
+                        if (isStamped) Color(0xFFFF8C42) else Color.Transparent, // 未蓋章時無邊框
                         RoundedCornerShape(8.dp)
                     ),
                 contentAlignment = Alignment.Center
