@@ -2,6 +2,12 @@ package com.chi157.resignationpointscard.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+val DarkBlueBackground = Color(0xFF2D3E50)
+val DangerRed = Color(0xFFE74C3C)
+val SoftPink = Color(0xFFF1948A)
+val GrayButton = Color(0xFF95A5A6)
+val DarkGrayBorder = Color(0xFF34495E)
+
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)
