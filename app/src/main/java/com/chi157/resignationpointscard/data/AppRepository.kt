@@ -16,6 +16,7 @@ class AppRepository(
     suspend fun updateTargetFund(fund: Long) = appSettingsDao.updateTargetFund(fund)
     suspend fun updateCurrentFund(fund: Long) = appSettingsDao.updateCurrentFund(fund)
     suspend fun updateResumeReady(ready: Boolean) = appSettingsDao.updateResumeReady(ready)
+    suspend fun updateQuoteRefreshRate(rate: Int) = appSettingsDao.updateQuoteRefreshRate(rate)
     
     // 待辦事項相關
     suspend fun addTodo(item: TodoItem) = todoDao.insertTodo(item)
@@ -32,6 +33,9 @@ class AppRepository(
         )
         stampRecordDao.insertRecord(record)
     }
+
+    suspend fun updateStamp(record: StampRecord) = stampRecordDao.updateRecord(record)
+    suspend fun deleteStamp(record: StampRecord) = stampRecordDao.deleteRecord(record)
     
     suspend fun initializeSettings() {
         val existing = appSettingsDao.getSettingsOnce()

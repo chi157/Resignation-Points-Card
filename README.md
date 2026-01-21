@@ -9,3 +9,8 @@ This project is licensed under the GNU Affero General Public License v3.0.
 Any use of this software to provide network services must, in accordance with AGPL v3 requirements, provide the user with the complete source code.
 
 Not for commercial use.
+
+
+
+© 2026 Neil Company. Developed by Cynthia Chang. Licensed under AGPL v3.
+

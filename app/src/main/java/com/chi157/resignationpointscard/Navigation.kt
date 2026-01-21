@@ -111,15 +111,16 @@ fun AppNavigation(
             ResignationPlanScreen(viewModel = viewModel, navController = navController)
         }
         
-        // 6. 離職紀錄 (暫時 Placeholder)
+        // 6. 離職紀錄
         composable(Screen.Record.route) {
-            TabPlaceholder(route = Screen.Record.route, title = "離職紀錄", viewModel = viewModel, navController = navController)
+            ResignationRecordScreen(viewModel = viewModel, navController = navController)
         }
         
         // 7. 設定畫面
         composable(Screen.Settings.route) {
             SettingsScreen(
                 settings = settings,
+                viewModel = viewModel,
                 onReset = { 
                     viewModel.resetAllData()
                     navController.navigate(Screen.CompanyName.route) {
@@ -132,67 +133,7 @@ fun AppNavigation(
     }
 }
 
-@Composable
-fun SettingsScreen(
-    settings: com.chi157.resignationpointscard.data.AppSettings?,
-    onReset: () -> Unit,
-    navController: NavHostController
-) {
-    Scaffold(
-        bottomBar = {
-            MainBottomNavigation(currentRoute = Screen.Settings.route, onNavigate = { route ->
-                navController.navigate(route)
-            })
-        },
-        containerColor = DarkBlueBackground
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(24.dp)
-        ) {
-            Text(
-                text = "設定",
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // 重置按鈕區塊
-            Surface(
-                onClick = onReset,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .border(1.dp, Color(0xFFE57373), RoundedCornerShape(4.dp)),
-                color = Color.White,
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "🗑️", modifier = Modifier.padding(end = 12.dp))
-                        Text(
-                            text = "全部重來",
-                            color = Color(0xFFD32F2F),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(text = "離職集點卡 ver 1.0", color = Color.Gray, fontSize = 12.sp)
-        }
-    }
-}
+
 
 @Composable
 fun TabPlaceholder(route: String, title: String, viewModel: AppViewModel, navController: NavHostController) {

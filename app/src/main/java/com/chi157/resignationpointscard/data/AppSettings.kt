@@ -14,7 +14,10 @@ data class AppSettings(
     // 離職計畫相關
     val targetFund: Long = 0,
     val currentFund: Long = 0,
-    val isResumeReady: Boolean = false
+    val isResumeReady: Boolean = false,
+    
+    // 小工具設定
+    val quoteRefreshRate: Int = 1 // 單位：小時
 )
 
 @Entity(tableName = "todo_items")

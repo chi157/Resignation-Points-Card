@@ -20,6 +20,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chi157.resignationpointscard.data.AppSettings
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalView
+import android.content.Context
+import android.view.inputmethod.InputMethodManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
 import com.chi157.resignationpointscard.data.StampRecord
 import com.chi157.resignationpointscard.ui.theme.DarkBlueBackground
 import java.text.SimpleDateFormat
@@ -36,6 +46,7 @@ fun MainPointsCardScreen(
     val allStamps by viewModel.allStamps.collectAsState()
     val isStampedToday by viewModel.isStampedToday.collectAsState()
     val angryCounter by viewModel.angryCounter.collectAsState()
+
     
     var showStampDialog by remember { mutableStateOf(false) }
     var showAngryDialog by remember { mutableStateOf(false) }
@@ -147,7 +158,10 @@ fun MainPointsCardScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(60.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF536162)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF536162),
+                        contentColor = Color.White
+                    ),
                     shape = RoundedCornerShape(4.dp)
                 ) {
                     Text(text = "✓ 今日已蓋章 ✓", fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -169,7 +183,8 @@ fun MainPointsCardScreen(
                         .fillMaxWidth()
                         .height(60.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (angryCounter >= 5) Color(0xFFE74C3C) else Color(0xFF2C3E50)
+                        containerColor = if (angryCounter >= 5) Color(0xFFE74C3C) else Color(0xFF2C3E50),
+                        contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(4.dp)
                 ) {
@@ -186,28 +201,52 @@ fun MainPointsCardScreen(
         // 1. 蓋章原因彈窗
         if (showStampDialog) {
             AlertDialog(
-                onDismissRequest = { showStampDialog = false },
+                onDismissRequest = { 
+                    showStampDialog = false 
+                },
                 title = { Text("今日離職值 +1", fontWeight = FontWeight.Bold) },
                 text = {
-                    Column {
+                    val focusManager = LocalFocusManager.current
+                    val context = LocalContext.current
+                    val view = LocalView.current
+                    val imm = remember { context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager }
+                    
+                    fun hideKeyboard() {
+                        focusManager.clearFocus()
+                        imm.hideSoftInputFromWindow(view.windowToken, 0)
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .pointerInput(Unit) {
+                                detectTapGestures(onTap = { hideKeyboard() })
+                            }
+                    ) {
                         Text("為什麼今日想離職？", fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
                         var reasonText by remember { mutableStateOf("") }
                         OutlinedTextField(
                             value = reasonText,
                             onValueChange = { reasonText = it },
                             placeholder = { Text("例：老闆又在畫大餅...") },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { hideKeyboard() })
                         )
                         
                         Row(modifier = Modifier.padding(top = 16.dp)) {
                             Button(
                                 onClick = {
+                                    hideKeyboard()
                                     viewModel.addStamp(reasonText)
                                     showStampDialog = false
                                     showSuccessAnimation = true
                                 },
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C3E50))
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF2C3E50),
+                                    contentColor = Color.White
+                                )
                             ) {
                                 Text("確認蓋章", color = Color.White)
                             }
@@ -231,7 +270,10 @@ fun MainPointsCardScreen(
                             showAngryDialog = false
                             showStampDialog = true // 接著去輸入原因
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Red,
+                            contentColor = Color.White
+                        )
                     ) {
                         Text("現在就蓋！")
                     }
@@ -268,7 +310,10 @@ fun MainPointsCardScreen(
                         Button(
                             onClick = { showSuccessAnimation = false },
                             modifier = Modifier.padding(top = 24.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C3E50))
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2C3E50),
+                                contentColor = Color.White
+                            )
                         ) {
                             Text("返回")
                         }

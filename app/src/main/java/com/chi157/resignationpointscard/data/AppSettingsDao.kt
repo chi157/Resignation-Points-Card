@@ -41,6 +41,9 @@ interface AppSettingsDao {
 
     @Query("UPDATE app_settings SET isResumeReady = :ready WHERE id = 1")
     suspend fun updateResumeReady(ready: Boolean)
+
+    @Query("UPDATE app_settings SET quoteRefreshRate = :rate WHERE id = 1")
+    suspend fun updateQuoteRefreshRate(rate: Int)
     
     @Query("DELETE FROM app_settings")
     suspend fun deleteAllSettings()

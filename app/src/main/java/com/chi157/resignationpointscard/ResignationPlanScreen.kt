@@ -4,6 +4,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -12,14 +13,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -29,6 +32,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Context
+import android.view.inputmethod.InputMethodManager
 import androidx.compose.ui.platform.LocalContext
 
 @Composable
@@ -492,7 +497,10 @@ fun TodoEditorDialog(
                         )
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C3E50))
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF2C3E50),
+                    contentColor = Color.White
+                )
             ) {
                 Text("儲存")
             }
@@ -574,22 +582,63 @@ fun showDateTimePicker(context: android.content.Context, initialTime: Long, onDa
 @Composable
 fun FundInputDialog(title: String, initialValue: Long, onConfirm: (Long) -> Unit, onDismiss: () -> Unit) {
     var text by remember { mutableStateOf(initialValue.toString()) }
+    val focusManager = LocalFocusManager.current
+    
+    // 使用原生 View 系統來強制控制鍵盤
+    val context = LocalContext.current
+    val view = LocalView.current
+    val imm = remember { context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager }
+    
+    fun hideKeyboard() {
+        focusManager.clearFocus()
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
+    }
+
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { 
+            hideKeyboard()
+            onDismiss() 
+        },
         title = { Text(title) },
         text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { if (it.all { char -> char.isDigit() }) text = it },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerInput(Unit) {
+                        detectTapGestures(onTap = { hideKeyboard() })
+                    }
+            ) {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { if (it.all { char -> char.isDigit() }) text = it },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { hideKeyboard() }
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(text.toLongOrNull() ?: 0L) }) { Text("確定") }
+            Button(
+                onClick = { 
+                    hideKeyboard()
+                    onConfirm(text.toLongOrNull() ?: 0L) 
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF2C3E50),
+                    contentColor = Color.White
+                )
+            ) { Text("確定") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消") }
+            TextButton(onClick = { 
+                hideKeyboard()
+                onDismiss() 
+            }) { Text("取消") }
         }
     )
 }

@@ -14,6 +14,12 @@ interface StampRecordDao {
     @Insert
     suspend fun insertRecord(record: StampRecord)
 
+    @Update
+    suspend fun updateRecord(record: StampRecord)
+
+    @Delete
+    suspend fun deleteRecord(record: StampRecord)
+
     @Query("DELETE FROM stamp_records")
     suspend fun deleteAllRecords()
     

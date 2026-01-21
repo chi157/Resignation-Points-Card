@@ -134,10 +134,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun saveTargetFund(fund: Long) = viewModelScope.launch { repository.updateTargetFund(fund) }
     fun saveCurrentFund(fund: Long) = viewModelScope.launch { repository.updateCurrentFund(fund) }
     fun toggleResumeReady(ready: Boolean) = viewModelScope.launch { repository.updateResumeReady(ready) }
+    fun saveQuoteRefreshRate(rate: Int) = viewModelScope.launch { repository.updateQuoteRefreshRate(rate) }
     
     fun addTodo(item: TodoItem) = viewModelScope.launch { repository.addTodo(item) }
     fun updateTodo(item: TodoItem) = viewModelScope.launch { repository.updateTodo(item) }
     fun deleteTodo(item: TodoItem) = viewModelScope.launch { repository.deleteTodo(item) }
+    fun updateStamp(record: StampRecord) = viewModelScope.launch { repository.updateStamp(record) }
+    fun deleteStamp(record: StampRecord) = viewModelScope.launch { repository.deleteStamp(record) }
     
     fun resetAllData() {
         viewModelScope.launch {
