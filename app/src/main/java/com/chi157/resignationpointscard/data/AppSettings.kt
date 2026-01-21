@@ -29,5 +29,7 @@ data class TodoItem(
     val isDone: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
     val startTimeMillis: Long? = null,
-    val deadlineTimeMillis: Long? = null
+    val deadlineTimeMillis: Long? = null,
+    val hasStartTimeTime: Boolean = true,
+    val hasDeadlineTime: Boolean = true
 )

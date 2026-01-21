@@ -404,18 +404,22 @@ fun TodoRow(item: TodoItem, onToggle: (Boolean) -> Unit, onDelete: () -> Unit, o
                 )
                 
                 if (item.startTimeMillis != null || item.deadlineTimeMillis != null) {
-                    val sdf = SimpleDateFormat("MM.dd HH:mm", Locale.TAIWAN)
+                    val sdfWithTime = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.TAIWAN)
+                    val sdfDateOnly = SimpleDateFormat("yyyy/MM/dd", Locale.TAIWAN)
+                    
                     Column(modifier = Modifier.padding(top = 4.dp)) {
                         if (item.startTimeMillis != null) {
+                            val timeStr = if (item.hasStartTimeTime) sdfWithTime.format(Date(item.startTimeMillis)) else sdfDateOnly.format(Date(item.startTimeMillis))
                             Text(
-                                text = "🚩 ${sdf.format(Date(item.startTimeMillis))} 開始",
+                                text = "🚩 $timeStr 開始",
                                 fontSize = 11.sp,
                                 color = Color(0xFF3498DB)
                             )
                         }
                         if (item.deadlineTimeMillis != null) {
+                            val timeStr = if (item.hasDeadlineTime) sdfWithTime.format(Date(item.deadlineTimeMillis)) else sdfDateOnly.format(Date(item.deadlineTimeMillis))
                             Text(
-                                text = "⌛ ${sdf.format(Date(item.deadlineTimeMillis))} 期限",
+                                text = "⌛ $timeStr 期限",
                                 fontSize = 11.sp,
                                 color = Color(0xFFE74C3C),
                                 modifier = Modifier.padding(top = 2.dp)
@@ -439,7 +443,9 @@ fun TodoEditorDialog(
 ) {
     var content by remember { mutableStateOf(item?.content ?: "") }
     var startTime by remember { mutableStateOf(item?.startTimeMillis) }
+    var startTimeHasTime by remember { mutableStateOf(item?.hasStartTimeTime ?: false) }
     var deadlineTime by remember { mutableStateOf(item?.deadlineTimeMillis) }
+    var deadlineTimeHasTime by remember { mutableStateOf(item?.hasDeadlineTime ?: false) }
     
     val context = LocalContext.current
     val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.TAIWAN)
@@ -464,8 +470,19 @@ fun TodoEditorDialog(
                 DateTimeSelector(
                     label = "開始做時間 (選填)",
                     timeMillis = startTime,
-                    onTimeSelected = { startTime = it },
-                    onClear = { startTime = null },
+                    hasTime = startTimeHasTime,
+                    onDateSelected = { 
+                        startTime = it 
+                    },
+                    onTimeSelected = { 
+                        startTime = it
+                        startTimeHasTime = true
+                    },
+                    onClearTime = { startTimeHasTime = false },
+                    onClearAll = { 
+                        startTime = null
+                        startTimeHasTime = false
+                    },
                     icon = "🚩",
                     iconColor = Color(0xFF3498DB)
                 )
@@ -476,8 +493,19 @@ fun TodoEditorDialog(
                 DateTimeSelector(
                     label = "預計完工期限 (選填)",
                     timeMillis = deadlineTime,
-                    onTimeSelected = { deadlineTime = it },
-                    onClear = { deadlineTime = null },
+                    hasTime = deadlineTimeHasTime,
+                    onDateSelected = { 
+                        deadlineTime = it 
+                    },
+                    onTimeSelected = { 
+                        deadlineTime = it
+                        deadlineTimeHasTime = true
+                    },
+                    onClearTime = { deadlineTimeHasTime = false },
+                    onClearAll = { 
+                        deadlineTime = null
+                        deadlineTimeHasTime = false
+                    },
                     icon = "⌛",
                     iconColor = Color(0xFFE74C3C)
                 )
@@ -494,7 +522,9 @@ fun TodoEditorDialog(
                                 isDone = item?.isDone ?: false,
                                 createdAt = item?.createdAt ?: System.currentTimeMillis(),
                                 startTimeMillis = startTime,
-                                deadlineTimeMillis = deadlineTime
+                                deadlineTimeMillis = deadlineTime,
+                                hasStartTimeTime = startTimeHasTime,
+                                hasDeadlineTime = deadlineTimeHasTime
                             )
                         )
                     }
@@ -517,67 +547,124 @@ fun TodoEditorDialog(
 fun DateTimeSelector(
     label: String,
     timeMillis: Long?,
+    hasTime: Boolean,
+    onDateSelected: (Long) -> Unit,
     onTimeSelected: (Long) -> Unit,
-    onClear: () -> Unit,
+    onClearTime: () -> Unit,
+    onClearAll: () -> Unit,
     icon: String,
     iconColor: Color
 ) {
     val context = LocalContext.current
-    val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.TAIWAN)
+    val sdfDate = SimpleDateFormat("yyyy/MM/dd", Locale.TAIWAN)
+    val sdfTime = SimpleDateFormat("HH:mm", Locale.TAIWAN)
     
     Column {
-        Text(text = label, fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 4.dp))
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                .clickable {
-                    showDateTimePicker(context, timeMillis ?: System.currentTimeMillis()) { onTimeSelected(it) }
-                }
-                .padding(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = icon, modifier = Modifier.padding(end = 8.dp))
-            Text(
-                text = if (timeMillis != null) sdf.format(Date(timeMillis)) else "尚未設定",
-                modifier = Modifier.weight(1f),
-                color = if (timeMillis != null) Color.Black else Color.LightGray,
-                fontSize = 14.sp
-            )
+            Text(text = label, fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 4.dp))
             if (timeMillis != null) {
-                IconButton(onClick = onClear, modifier = Modifier.size(20.dp)) {
-                    Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(14.dp))
+                Text(
+                    text = "清除全部", 
+                    fontSize = 11.sp, 
+                    color = Color.Gray, 
+                    modifier = Modifier.clickable { onClearAll() }
+                )
+            }
+        }
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // 日期選擇器
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                    .clickable {
+                        showDatePicker(context, timeMillis ?: System.currentTimeMillis()) { onDateSelected(it) }
+                    }
+                    .padding(12.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = icon, modifier = Modifier.padding(end = 8.dp))
+                    Text(
+                        text = if (timeMillis != null) sdfDate.format(Date(timeMillis)) else "選擇日期",
+                        color = if (timeMillis != null) Color.Black else Color.LightGray,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+            
+            // 時間選擇器 (僅在已選擇日期時可用)
+            Box(
+                modifier = Modifier
+                    .weight(0.7f)
+                    .border(1.dp, if (timeMillis != null) Color.LightGray else Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
+                    .background(if (timeMillis != null) Color.Transparent else Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
+                    .clickable(enabled = timeMillis != null) {
+                        showTimePicker(context, timeMillis ?: System.currentTimeMillis()) { onTimeSelected(it) }
+                    }
+                    .padding(12.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = if (timeMillis != null && hasTime) sdfTime.format(Date(timeMillis)) else "選擇時間",
+                        modifier = Modifier.weight(1f),
+                        color = if (timeMillis != null && hasTime) Color.Black else Color.LightGray,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center
+                    )
+                    if (timeMillis != null && hasTime) {
+                        IconButton(onClick = onClearTime, modifier = Modifier.size(16.dp)) {
+                            Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(12.dp))
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-fun showDateTimePicker(context: android.content.Context, initialTime: Long, onDateTimeSelected: (Long) -> Unit) {
+fun showDatePicker(context: android.content.Context, initialTime: Long, onDateSelected: (Long) -> Unit) {
     val calendar = Calendar.getInstance().apply { timeInMillis = initialTime }
-    
     DatePickerDialog(
         context,
         { _, year, month, dayOfMonth ->
-            calendar.set(Calendar.YEAR, year)
-            calendar.set(Calendar.MONTH, month)
-            calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-            
-            TimePickerDialog(
-                context,
-                { _, hourOfDay, minute ->
-                    calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
-                    calendar.set(Calendar.MINUTE, minute)
-                    onDateTimeSelected(calendar.timeInMillis)
-                },
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE),
-                true
-            ).show()
+            val result = Calendar.getInstance().apply {
+                timeInMillis = initialTime
+                set(Calendar.YEAR, year)
+                set(Calendar.MONTH, month)
+                set(Calendar.DAY_OF_MONTH, dayOfMonth)
+            }
+            onDateSelected(result.timeInMillis)
         },
         calendar.get(Calendar.YEAR),
         calendar.get(Calendar.MONTH),
         calendar.get(Calendar.DAY_OF_MONTH)
+    ).show()
+}
+
+fun showTimePicker(context: android.content.Context, initialTime: Long, onTimeSelected: (Long) -> Unit) {
+    val calendar = Calendar.getInstance().apply { timeInMillis = initialTime }
+    TimePickerDialog(
+        context,
+        { _, hourOfDay, minute ->
+            val result = Calendar.getInstance().apply {
+                timeInMillis = initialTime
+                set(Calendar.HOUR_OF_DAY, hourOfDay)
+                set(Calendar.MINUTE, minute)
+            }
+            onTimeSelected(result.timeInMillis)
+        },
+        calendar.get(Calendar.HOUR_OF_DAY),
+        calendar.get(Calendar.MINUTE),
+        true
     ).show()
 }
 
