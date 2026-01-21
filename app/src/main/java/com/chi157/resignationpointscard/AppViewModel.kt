@@ -58,4 +58,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.completeOnboarding()
         }
     }
+    
+    fun resetAllData() {
+        viewModelScope.launch {
+            repository.resetAllData()
+        }
+    }
 }

@@ -32,4 +32,9 @@ class AppRepository(private val appSettingsDao: AppSettingsDao) {
     suspend fun completeOnboarding() {
         appSettingsDao.updateOnboardingCompleted(true)
     }
+    
+    suspend fun resetAllData() {
+        appSettingsDao.deleteAllSettings()
+        initializeSettings()
+    }
 }
