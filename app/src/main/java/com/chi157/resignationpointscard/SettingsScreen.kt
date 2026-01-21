@@ -48,6 +48,9 @@ fun SettingsScreen(
     // 但既然有 "儲存"，我們就把公司名稱的修改跟儲存綁定。
     
     var tempCompanyName by remember(settings) { mutableStateOf(settings?.companyName ?: "") }
+    var tempTargetStamps by remember(settings) { mutableStateOf(settings?.targetStamps ?: 30) }
+    var tempSelectedTheme by remember(settings) { mutableStateOf(settings?.selectedTheme ?: CardTheme.VACATION_MODE.name) }
+    var tempQuoteRefreshRate by remember(settings) { mutableStateOf(settings?.quoteRefreshRate ?: 1) }
 
     Scaffold(
         topBar = {
@@ -68,6 +71,14 @@ fun SettingsScreen(
                 Button(
                     onClick = { 
                         viewModel.saveCompanyName(tempCompanyName)
+                        viewModel.saveTargetStamps(tempTargetStamps)
+                        
+                        // 尋找對應的 Enum
+                        val themeEnum = try { CardTheme.valueOf(tempSelectedTheme) } catch(e: Exception) { CardTheme.VACATION_MODE }
+                        viewModel.saveTheme(themeEnum)
+                        
+                        viewModel.saveQuoteRefreshRate(tempQuoteRefreshRate)
+                        
                         focusManager.clearFocus()
                         showSaveSuccessDialog = true
                     },
@@ -146,7 +157,7 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         val options = listOf(10, 20, 30)
-                        val current = settings?.targetStamps ?: 30
+                        val current = tempTargetStamps
                         
                         options.forEach { option ->
                             val isSelected = current == option
@@ -159,7 +170,7 @@ fun SettingsScreen(
                                         if (isSelected) Color(0xFFAAB8C2) else Color.Transparent, 
                                         RoundedCornerShape(18.dp)
                                     )
-                                    .clickable { viewModel.saveTargetStamps(option) },
+                                    .clickable { tempTargetStamps = option },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
@@ -183,24 +194,24 @@ fun SettingsScreen(
                     ) {
                         ThemeOption(
                             name = "經典 RPG",
-                            isSelected = settings?.selectedTheme == CardTheme.CLASSIC_RPG.name,
+                            isSelected = tempSelectedTheme == CardTheme.CLASSIC_RPG.name,
                             color = Color(0xFF2C3E50),
                             icon = "🛡️",
-                            onClick = { viewModel.saveTheme(CardTheme.CLASSIC_RPG) }
+                            onClick = { tempSelectedTheme = CardTheme.CLASSIC_RPG.name }
                         )
                         ThemeOption(
                             name = "系統錯誤",
-                            isSelected = settings?.selectedTheme == CardTheme.SYSTEM_ERROR.name,
+                            isSelected = tempSelectedTheme == CardTheme.SYSTEM_ERROR.name,
                             color = Color(0xFF000000),
                             icon = "👾",
-                            onClick = { viewModel.saveTheme(CardTheme.SYSTEM_ERROR) }
+                            onClick = { tempSelectedTheme = CardTheme.SYSTEM_ERROR.name }
                         )
                         ThemeOption(
                             name = "度假模式",
-                            isSelected = settings?.selectedTheme == CardTheme.VACATION_MODE.name,
+                            isSelected = tempSelectedTheme == CardTheme.VACATION_MODE.name,
                             color = Color(0xFFFFE082),
                             icon = "☀️",
-                            onClick = { viewModel.saveTheme(CardTheme.VACATION_MODE) }
+                            onClick = { tempSelectedTheme = CardTheme.VACATION_MODE.name }
                         )
                     }
                 }
@@ -224,7 +235,7 @@ fun SettingsScreen(
                             .fillMaxWidth()
                             .border(2.dp, Color.Black, RoundedCornerShape(4.dp))
                             .clickable { /* 這裡可以做一個選單，暫時僅作切換示範 */ 
-                               val nextRate = when(settings?.quoteRefreshRate) {
+                               val nextRate = when(tempQuoteRefreshRate) {
                                    1 -> 2
                                    2 -> 4
                                    4 -> 8
@@ -232,13 +243,13 @@ fun SettingsScreen(
                                    12 -> 24
                                    else -> 1
                                }
-                               viewModel.saveQuoteRefreshRate(nextRate)
+                               tempQuoteRefreshRate = nextRate
                             }
                             .padding(12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "${settings?.quoteRefreshRate ?: 1} 小時 ↕",
+                            text = "$tempQuoteRefreshRate 小時 ↕",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                         )
