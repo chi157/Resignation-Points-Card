@@ -40,9 +40,9 @@
 
 ---
 
-## 🛠️ 技術棧 (Technical Stack)
+## 🛠️ 使用技術 (Technical Stack)
 
-本專案採用現代 Android 開發的最佳實踐與技術棧：
+本專案採用現代 Android 開發的最佳實踐與技術：
 
 *   **UI 框架**：[Jetpack Compose](https://developer.android.com/jetpack/compose) - 全聲明式 UI 架構，打造流暢且現代的互動體驗。
 *   **開發語言**：[Kotlin](https://kotlinlang.org/) - 100% 使用 Kotlin 編寫。
