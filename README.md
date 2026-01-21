@@ -19,10 +19,10 @@
 ### 1. 離職集點系統 (Stamp System)
 *   **趣味蓋章**：提供多種目標格數（10, 20, 30格）供每張新卡片選擇。
 *   **離職原因追蹤**：每次蓋章可記錄當下的情緒或原因，系統會自動學習您的「常用原因」。
-*   **「真的很生氣」彩蛋**：當你連續點擊蓋章按鈕時，會觸發憤怒模式，允許當天無限量蓋章發洩！
+*   **「真的很生氣」彩蛋**：小彩蛋，自己找找吧！
 *   **歷史鎖定**：已完成的集點卡紀錄將會被「封存鎖定」，作為你職場奮鬥的不可抹滅見證。
 
-### 2. 數據視覺化與紀錄 (Analytics & Records)
+### 2. 資料視覺化與紀錄 (Analytics & Records)
 *   **原因分佈圖**：使用直覺的甜甜圈圓餅圖（Donut Chart）統計你的離職原因。
 *   **卡片分組**：詳盡記錄每一張卡的歷史，並標註當時的卡片容量與鎖定狀態。
 
@@ -47,9 +47,9 @@
 *   **UI 框架**：[Jetpack Compose](https://developer.android.com/jetpack/compose) - 全聲明式 UI 架構，打造流暢且現代的互動體驗。
 *   **開發語言**：[Kotlin](https://kotlinlang.org/) - 100% 使用 Kotlin 編寫。
 *   **架構模式**：**MVVM (Model-View-ViewModel)** 結合 **Repository Pattern**，確保代碼的高可維護性與關注點分離。
-*   **資料庫**：[Room Persistence Library](https://developer.android.com/training/data-storage/room) - 處理本地數據持久化，支援 Flow 實時監聽數據異動。
+*   **資料庫**：[Room Persistence Library](https://developer.android.com/training/data-storage/room) - 處理本地資料持久化，支援 Flow 實時監聽資料異動。
 *   **桌面小工具**：[Jetpack Glance](https://developer.android.com/jetpack/compose/glance) - 使用 Compose 語法構建原生桌面 App Widget。
-*   **異步處理**：[Kotlin Coroutines](https://kotlinlang.org/docs/coroutines-overview.html) & [Flow](https://kotlinlang.org/docs/flow.html) - 優雅地處理背景任務與反應式數據流。
+*   **異步處理**：[Kotlin Coroutines](https://kotlinlang.org/docs/coroutines-overview.html) & [Flow](https://kotlinlang.org/docs/flow.html) - 優雅地處理背景任務與反應式資料流。
 *   **排程任務**：[WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager) - 負責小工具語錄的背景刷新任務。
 *   **繪圖 API**：使用 Compose **Canvas API** 手繪圓餅圖與自定義 UI 組件。
 *   **外觀設計**：Material 3 設計規範，搭配自定義 HSV/RGB 顏色選擇器。
