@@ -1,4 +1,4 @@
-# 離職集點卡 (Resignation Points Card) 🚀
+# 離職集點卡 (Resignation Points Card) - Android App🚀
 
 ![License](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)
 ![Platform](https://img.shields.io/badge/Platform-Android-green.svg)
