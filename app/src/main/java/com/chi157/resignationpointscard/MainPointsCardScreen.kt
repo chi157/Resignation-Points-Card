@@ -51,11 +51,39 @@ fun MainPointsCardScreen(
     var showStampDialog by remember { mutableStateOf(false) }
     var showAngryDialog by remember { mutableStateOf(false) }
     var showSuccessAnimation by remember { mutableStateOf(false) }
+    var showFullCardDialog by remember { mutableStateOf(false) }
 
     // 計算當前卡片資訊
     val targetStamps = settings?.targetStamps?.takeIf { it > 0 } ?: 30
     val totalStamps = allStamps.size
-    val currentCardIndex = (totalStamps / targetStamps) + 1
+    
+    // 計算已完成的完整卡片數 (例如 10 stamps, target 10 -> completed 1)
+    val completedCardsCount = totalStamps / targetStamps
+    val lastCompletedIndex = settings?.lastCompletedCardIndex ?: 0
+    
+    // 判斷是否還有「已完成但尚未檢視/確認」的卡片
+    // 如果 completedCardsCount > lastCompletedIndex，表示有一張新滿的卡還沒被"翻頁"
+    // 但只有當剛好整除時才算是"剛滿"的狀態需要處理。
+    // 如果 totalStamps % targetStamps == 0 且 totalStamps > 0，表示當前卡片剛好滿了。
+    
+    val isJustFull = (totalStamps > 0 && totalStamps % targetStamps == 0)
+    
+    // 決定要顯示哪張卡片
+    // 如果剛滿，且用戶還沒按過「再來一次」(lastCompletedIndex < completedCardsCount)，則顯示滿的那張 (Index = completedCardsCount)
+    // 否則顯示下一張 (Index = completedCardsCount + 1)
+    
+    val showFullCardReview = isJustFull && (lastCompletedIndex < completedCardsCount)
+    
+    val currentCardIndex = if (showFullCardReview) completedCardsCount else completedCardsCount + 1
+    
+    // 根據顯示的卡片 Index 過濾印章
+    // 如果是看滿的那張，就是該張的所有印章。如果是看新卡，就是新卡的印章(通常是空，除非已開始蓋)
+    // 這裡邏輯要小心：allStamps 裡面的 cardIndex 是當下蓋的時候決定的。
+    // 我們的 addStamp 邏輯是：val cardIndex = (totalStamps / targetStamps) + 1。
+    // 所以第 1~10 個章，cardIndex 都是 1。
+    // 當 total = 10，showFullCardReview = true，我們想看 cardIndex = 1 的章。
+    // 當 total = 10，showFullCardReview = false (已按過)，我們想看 cardIndex = 2 的章 (目前 0 個)。
+    
     val currentCardStamps = allStamps.filter { it.cardIndex == currentCardIndex }
     val stampsOnThisCard = currentCardStamps.size
     
@@ -169,45 +197,78 @@ fun MainPointsCardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 蓋章按鈕
-            if (isStampedToday && angryCounter < 5) {
-                Button(
-                    onClick = { viewModel.incrementAngryCounter() },
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 蓋章按鈕區塊
+            if (showFullCardReview) {
+                // 顯示集滿通知與操作
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(60.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF536162),
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(4.dp)
+                        .background(Color(0xFFF1C40F), RoundedCornerShape(4.dp))
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "✓ 今日已蓋章 ✓", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text("★ 集滿啦！ ★", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 }
                 
-                Text(
-                    text = "明天再來吧",
-                    color = Color.Gray,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            } else {
-                // 蓋章按鈕 (或觸發彩蛋後的按鈕)
+                Spacer(modifier = Modifier.height(16.dp))
+                
                 Button(
-                    onClick = { 
-                        if (angryCounter >= 5) showAngryDialog = true else showStampDialog = true 
-                    },
+                    onClick = { showFullCardDialog = true },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(60.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (angryCounter >= 5) Color(0xFFE74C3C) else Color(0xFF2C3E50),
+                        containerColor = Color(0xFFD35400), // 橘色
                         contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(4.dp)
                 ) {
-                    val btnText = if (angryCounter >= 5) "蓋章發洩！" else "✔ 我要蓋章"
-                    Text(text = btnText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "👍 開始新卡片 👍", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                }
+                
+            } else {
+                // 一般蓋章邏輯
+                if (isStampedToday && angryCounter < 5) {
+                    Button(
+                        onClick = { viewModel.incrementAngryCounter() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF536162),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(text = "✓ 今日已蓋章 ✓", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
+                    
+                    Text(
+                        text = "明天再來吧",
+                        color = Color.Gray,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                } else {
+                    // 蓋章按鈕 (或觸發彩蛋後的按鈕)
+                    Button(
+                        onClick = { 
+                            if (angryCounter >= 5) showAngryDialog = true else showStampDialog = true 
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (angryCounter >= 5) Color(0xFFE74C3C) else Color(0xFF2C3E50),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        val btnText = if (angryCounter >= 5) "蓋章發洩！" else "✔ 我要蓋章"
+                        Text(text = btnText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
             
@@ -215,6 +276,61 @@ fun MainPointsCardScreen(
         }
 
         // --- 彈窗處理 ---
+        
+        // 0. 集滿卡片彈窗
+        if (showFullCardDialog) {
+            AlertDialog(
+                onDismissRequest = { showFullCardDialog = false },
+                title = { 
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                         Text("🎉", fontSize = 24.sp)
+                         Spacer(modifier = Modifier.width(8.dp))
+                         Text("${settings?.companyName} 集滿了！", fontWeight = FontWeight.Bold)
+                    }
+                },
+                text = { Text("要再給公司一次機會嗎？") },
+                confirmButton = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // 1. 不要，我要離職
+                        Button(
+                            onClick = { 
+                                // TODO: 跳轉到離職畫面
+                                showFullCardDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE74C3C))
+                        ) {
+                            Text("不要，我要離職", color = Color.White)
+                        }
+                        
+                        // 2. 再給一次機會
+                        Button(
+                            onClick = { 
+                                // 更新已完成卡片索引，進入下一張卡
+                                viewModel.updateLastCompletedCardIndex(completedCardsCount)
+                                showFullCardDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C3E50))
+                        ) {
+                            Text("再給一次機會", color = Color.White)
+                        }
+                        
+                         // 3. Cancel
+                        Button(
+                            onClick = { showFullCardDialog = false },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray)
+                        ) {
+                            Text("Cancel", color = Color.Black)
+                        }
+                    }
+                }
+            )
+        }
 
         // 1. 蓋章原因彈窗
         if (showStampDialog) {

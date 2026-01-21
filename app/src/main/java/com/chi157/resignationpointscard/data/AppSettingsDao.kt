@@ -45,6 +45,9 @@ interface AppSettingsDao {
     @Query("UPDATE app_settings SET quoteRefreshRate = :rate WHERE id = 1")
     suspend fun updateQuoteRefreshRate(rate: Int)
     
+    @Query("UPDATE app_settings SET lastCompletedCardIndex = :index WHERE id = 1")
+    suspend fun updateLastCompletedCardIndex(index: Int)
+    
     @Query("DELETE FROM app_settings")
     suspend fun deleteAllSettings()
 }

@@ -135,6 +135,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun saveCurrentFund(fund: Long) = viewModelScope.launch { repository.updateCurrentFund(fund) }
     fun toggleResumeReady(ready: Boolean) = viewModelScope.launch { repository.updateResumeReady(ready) }
     fun saveQuoteRefreshRate(rate: Int) = viewModelScope.launch { repository.updateQuoteRefreshRate(rate) }
+    fun updateLastCompletedCardIndex(index: Int) = viewModelScope.launch { repository.updateLastCompletedCardIndex(index) }
     
     fun addTodo(item: TodoItem) = viewModelScope.launch { repository.addTodo(item) }
     fun updateTodo(item: TodoItem) = viewModelScope.launch { repository.updateTodo(item) }

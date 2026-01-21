@@ -17,6 +17,7 @@ class AppRepository(
     suspend fun updateCurrentFund(fund: Long) = appSettingsDao.updateCurrentFund(fund)
     suspend fun updateResumeReady(ready: Boolean) = appSettingsDao.updateResumeReady(ready)
     suspend fun updateQuoteRefreshRate(rate: Int) = appSettingsDao.updateQuoteRefreshRate(rate)
+    suspend fun updateLastCompletedCardIndex(index: Int) = appSettingsDao.updateLastCompletedCardIndex(index)
     
     // 待辦事項相關
     suspend fun addTodo(item: TodoItem) = todoDao.insertTodo(item)

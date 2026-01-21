@@ -16,6 +16,8 @@ data class AppSettings(
     val currentFund: Long = 0,
     val isResumeReady: Boolean = false,
     
+    val lastCompletedCardIndex: Int = 0, // 紀錄已完成並按過「再給一次機會」的卡片索引
+    
     // 小工具設定
     val quoteRefreshRate: Int = 1 // 單位：小時
 )
