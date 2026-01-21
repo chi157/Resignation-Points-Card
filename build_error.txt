@@ -1,0 +1,48 @@
+﻿
+> Configure project :app
+WARNING: The option setting 'android.disallowKotlinSourceSets=false' is experimental.
+The current default is 'true'.
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateDebugResources UP-TO-DATE
+
+> Task :app:packageDebugResources FAILED
+.\gradlew : ERROR: [drawable/ic_launcher_original] E:\My
+ Project\AndroidStudioProjects\ResignationPointsCard\app
+\src\main\res\drawable\ic_launcher_original.jpg [drawabl
+e/ic_launcher_original] E:\My Project\AndroidStudioProje
+cts\ResignationPointsCard\app\src\main\res\drawable\ic_l
+auncher_original.png: Resource and asset merger: Duplica
+te resources
+At line:1 char:1
++ .\gradlew assembleDebug 2>&1 | Out-File -FilePath "bui
+ld_error.txt" - ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ERROR: [dr 
+   awabl...icate resources:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:packageDebugResources'.
+> [drawable/ic_launcher_original] E:\My Project\AndroidS
+tudioProjects\ResignationPointsCard\app\src\main\res\dra
+wable\ic_launcher_original.jpg	[drawable/ic_launcher_ori
+ginal] E:\My Project\AndroidStudioProjects\ResignationPo
+intsCard\app\src\main\res\drawable\ic_launcher_original.
+png: Error: Duplicate resources
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log outp
+ut.
+> Run with --scan to generate a Build Scan (Powered by D
+evelocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1s
+2 actionable tasks: 1 executed, 1 up-to-date
