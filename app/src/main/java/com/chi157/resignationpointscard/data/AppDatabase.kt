@@ -5,9 +5,10 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [AppSettings::class], version = 2, exportSchema = false)
+@Database(entities = [AppSettings::class, StampRecord::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun appSettingsDao(): AppSettingsDao
+    abstract fun stampRecordDao(): StampRecordDao
     
     companion object {
         @Volatile
@@ -20,7 +21,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "resignation_points_card_database"
                 )
-                .fallbackToDestructiveMigration() // 版本升級時重建資料庫
+                .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
                 instance
