@@ -45,13 +45,16 @@ fun ResignationRecordScreen(
 ) {
     val allStamps by viewModel.allStamps.collectAsState()
     val commonReasonsList by viewModel.allCommonReasons.collectAsState()
+    val settings by viewModel.settings.collectAsState()
+    val targetStamps = settings?.targetStamps?.takeIf { it > 0 } ?: 30
     
     var editingRecord by remember { mutableStateOf<StampRecord?>(null) }
     var showEditDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     
     // 計算統計數據
     val totalCount = allStamps.size
-    val cardCount = allStamps.map { it.cardIndex }.distinct().size
+    val cardCount = if (totalCount == 0) 0 else (totalCount - 1) / targetStamps + 1
     
     // 找出最常見的理由
     val mostCommonReason = remember(allStamps) {
@@ -59,9 +62,13 @@ fun ResignationRecordScreen(
             .maxByOrNull { it.value.size }?.key ?: "尚未有紀錄"
     }
 
-    // 依照卡片索引分組紀錄
-    val stampsByCard = remember(allStamps) {
-        allStamps.groupBy { it.cardIndex }.toSortedMap(compareByDescending { it })
+    // 依照虛擬卡片索引分組紀錄 (基於總數量與順序)
+    val stampsByCard = remember(allStamps, targetStamps) {
+        allStamps.sortedBy { it.dateMillis }
+            .withIndex()
+            .groupBy { (i, _) -> (i / targetStamps) + 1 }
+            .mapValues { it.value.map { it.value } }
+            .toSortedMap(compareByDescending { it })
     }
 
     Scaffold(
@@ -171,11 +178,35 @@ fun ResignationRecordScreen(
                     showEditDialog = false
                 },
                 onDelete = {
-                    viewModel.deleteStamp(editingRecord!!)
-                    showEditDialog = false
+                    showDeleteConfirmDialog = true
                 },
                 commonReasons = commonReasonsList,
                 onAddCommonReason = { viewModel.addCommonReason(it) }
+            )
+        }
+
+        if (showDeleteConfirmDialog && editingRecord != null) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirmDialog = false },
+                title = { Text("確定要刪除嗎？") },
+                text = { Text("刪除後這枚印章將會消失，且無法還原喔！") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteStamp(editingRecord!!)
+                            showDeleteConfirmDialog = false
+                            showEditDialog = false
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFE74C3C))
+                    ) {
+                        Text("確定刪除", fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                        Text("取消")
+                    }
+                }
             )
         }
     }

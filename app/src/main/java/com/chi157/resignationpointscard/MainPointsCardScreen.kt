@@ -71,15 +71,11 @@ fun MainPointsCardScreen(
     // 但只有當剛好整除時才算是"剛滿"的狀態需要處理。
     // 如果 totalStamps % targetStamps == 0 且 totalStamps > 0，表示當前卡片剛好滿了。
     
-    val isJustFull = (totalStamps > 0 && totalStamps % targetStamps == 0)
-    
     // 決定要顯示哪張卡片
-    // 如果剛滿，且用戶還沒按過「再來一次」(lastCompletedIndex < completedCardsCount)，則顯示滿的那張 (Index = completedCardsCount)
-    // 否則顯示下一張 (Index = completedCardsCount + 1)
-    
-    val showFullCardReview = isJustFull && (lastCompletedIndex < completedCardsCount)
-    
-    val currentCardIndex = if (showFullCardReview) completedCardsCount else completedCardsCount + 1
+    // 如果有未確認的滿卡 (lastCompletedIndex < completedCardsCount)，顯示該張滿卡
+    // 否則顯示下一張正在進行中的卡片
+    val showFullCardReview = lastCompletedIndex < completedCardsCount
+    val currentCardIndex = if (showFullCardReview) lastCompletedIndex + 1 else completedCardsCount + 1
     
     // 根據顯示的卡片 Index 過濾印章
     // 如果是看滿的那張，就是該張的所有印章。如果是看新卡，就是新卡的印章(通常是空，除非已開始蓋)
@@ -89,8 +85,12 @@ fun MainPointsCardScreen(
     // 當 total = 10，showFullCardReview = true，我們想看 cardIndex = 1 的章。
     // 當 total = 10，showFullCardReview = false (已按過)，我們想看 cardIndex = 2 的章 (目前 0 個)。
     
-    val currentCardStamps = allStamps.filter { it.cardIndex == currentCardIndex }
-    val stampsOnThisCard = currentCardStamps.size
+    // 改為根據總數量與目前的卡片索引來計算當前卡片的顯示印章數，避免刪除記錄造成的空洞
+    val stampsOnThisCard = if (currentCardIndex <= completedCardsCount) {
+        targetStamps
+    } else {
+        totalStamps % targetStamps
+    }
     
     // 解析主題
     val currentTheme = try {
@@ -195,7 +195,7 @@ fun MainPointsCardScreen(
             ) {
                 StampGrid(
                     targetStamps = targetStamps,
-                    stampedPositions = currentCardStamps.map { it.stampPosition }.toSet(),
+                    stampedPositions = (1..stampsOnThisCard).toSet(),
                     theme = currentTheme
                 )
             }
@@ -315,7 +315,7 @@ fun MainPointsCardScreen(
                         Button(
                             onClick = { 
                                 // 更新已完成卡片索引，進入下一張卡
-                                viewModel.updateLastCompletedCardIndex(completedCardsCount)
+                                viewModel.updateLastCompletedCardIndex(currentCardIndex)
                                 showFullCardDialog = false
                             },
                             modifier = Modifier.fillMaxWidth(),
