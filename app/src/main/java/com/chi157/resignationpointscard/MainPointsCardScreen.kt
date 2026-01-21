@@ -325,7 +325,7 @@ fun MainPointsCardScreen(
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray)
                         ) {
-                            Text("Cancel", color = Color.Black)
+                            Text("取消", color = Color.Black)
                         }
                     }
                 }

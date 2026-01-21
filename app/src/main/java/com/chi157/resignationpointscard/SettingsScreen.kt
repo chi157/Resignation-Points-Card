@@ -287,7 +287,7 @@ fun SettingsScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text("離職集點卡 ver1.0", color = Color.Gray, fontSize = 12.sp)
-                Text("Made by Neil Yin", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                Text("© 2026 Neil尼歐 · Cynthia Chang(chi157) · AGPL v3", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
             }
             
             Spacer(modifier = Modifier.height(80.dp))
