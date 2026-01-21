@@ -13,3 +13,5 @@
 .externalNativeBuild
 .cxx
 local.properties
+*.hprof
+build_log.txt

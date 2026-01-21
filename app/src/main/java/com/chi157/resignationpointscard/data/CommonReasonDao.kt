@@ -11,9 +11,15 @@ interface CommonReasonDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertCommonReason(reason: CommonReason)
 
+    @Update
+    suspend fun updateCommonReason(reason: CommonReason)
+
     @Delete
     suspend fun deleteCommonReason(reason: CommonReason)
     
     @Query("UPDATE common_reasons SET usageCount = usageCount + 1 WHERE id = :id")
     suspend fun incrementUsageCount(id: Int)
+
+    @Query("DELETE FROM common_reasons")
+    suspend fun deleteAllCommonReasons()
 }

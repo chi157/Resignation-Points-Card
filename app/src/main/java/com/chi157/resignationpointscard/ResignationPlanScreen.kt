@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -55,6 +56,8 @@ fun ResignationPlanScreen(
     var showEditorDialog by remember { mutableStateOf(false) }
     var editingTodo by remember { mutableStateOf<TodoItem?>(null) }
     var showCompleted by remember { mutableStateOf(true) } // 預設全部顯示
+    
+    var showCustomFundAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         bottomBar = {
@@ -75,6 +78,30 @@ fun ResignationPlanScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            val currentFundValue = settings?.currentFund ?: 0L
+            
+            if (showCustomFundAddDialog) {
+                CustomFundAddDialog(
+                    presets = settings?.fundIncrementPresets?.split(",")?.map { it.trim() } ?: listOf("500", "1000", "3000"),
+                    onConfirm = { amount, shouldSaveAsPreset, replaceIndex ->
+                        viewModel.saveCurrentFund(currentFundValue + amount)
+                        if (shouldSaveAsPreset) {
+                            val currentPresets = (settings?.fundIncrementPresets?.split(",")?.map { it.trim() } ?: listOf("500", "1000", "3000")).toMutableList()
+                            if (replaceIndex in currentPresets.indices) {
+                                currentPresets[replaceIndex] = amount.toString()
+                            } else if (currentPresets.size < 3) {
+                                currentPresets.add(amount.toString())
+                            } else {
+                                // Default to replace the last one if full but index invalid (shouldn't happen)
+                                currentPresets[2] = amount.toString()
+                            }
+                            viewModel.saveFundIncrementPresets(currentPresets.joinToString(","))
+                        }
+                        showCustomFundAddDialog = false
+                    },
+                    onDismiss = { showCustomFundAddDialog = false }
+                )
+            }
             Text(
                 text = "離職計畫",
                 fontSize = 24.sp,
@@ -160,6 +187,42 @@ fun ResignationPlanScreen(
                         amount = current,
                         onClick = { showCurrentFundDialog = true }
                     )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // 快速增加按鈕
+                    val presets = remember(settings?.fundIncrementPresets) {
+                        settings?.fundIncrementPresets?.split(",")?.mapNotNull { it.trim().toLongOrNull() } ?: listOf(500L, 1000L, 3000L)
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        presets.take(3).forEach { amount ->
+                            Button(
+                                onClick = { viewModel.saveCurrentFund(current + amount) },
+                                modifier = Modifier.weight(1f).height(36.dp),
+                                contentPadding = PaddingValues(0.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF0F0F0), contentColor = Color(0xFF2C3E50)),
+                                shape = RoundedCornerShape(4.dp),
+                                border = BorderStroke(1.dp, Color.LightGray)
+                            ) {
+                                Text("+$amount", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        
+                        // 自訂按鈕
+                        Button(
+                            onClick = { showCustomFundAddDialog = true },
+                            modifier = Modifier.weight(1f).height(36.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3498DB), contentColor = Color.White),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text("自訂", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
 
@@ -728,6 +791,83 @@ fun FundInputDialog(title: String, initialValue: Long, onConfirm: (Long) -> Unit
                 hideKeyboard()
                 onDismiss() 
             }) { Text("取消") }
+        }
+    )
+}
+
+@Composable
+fun CustomFundAddDialog(
+    presets: List<String>,
+    onConfirm: (Long, Boolean, Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var text by remember { mutableStateOf("") }
+    var shouldSaveAsPreset by remember { mutableStateOf(false) }
+    var replaceIndex by remember { mutableStateOf(0) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("自訂增加金額", fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { if (it.all { char -> char.isDigit() }) text = it },
+                    label = { Text("增加多少金額？") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                    prefix = { Text("+") }
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = shouldSaveAsPreset,
+                        onCheckedChange = { shouldSaveAsPreset = it }
+                    )
+                    Text("設為預設按鈕", fontSize = 14.sp)
+                }
+                
+                if (shouldSaveAsPreset) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("替換哪一個預設值？", fontSize = 12.sp, color = Color.Gray)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        presets.forEachIndexed { index, value ->
+                            val isSelected = replaceIndex == index
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .border(2.dp, if (isSelected) Color(0xFF3498DB) else Color.LightGray, RoundedCornerShape(4.dp))
+                                    .clickable { replaceIndex = index }
+                                    .padding(8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(text = value, fontSize = 12.sp, color = if (isSelected) Color(0xFF3498DB) else Color.Gray)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val amount = text.toLongOrNull() ?: 0L
+                    if (amount > 0) {
+                        onConfirm(amount, shouldSaveAsPreset, replaceIndex)
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C3E50))
+            ) {
+                Text("增加")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消") }
         }
     )
 }

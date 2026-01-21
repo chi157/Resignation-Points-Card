@@ -20,6 +20,9 @@ class AppRepository(
     suspend fun updateResumeReady(ready: Boolean) = appSettingsDao.updateResumeReady(ready)
     suspend fun updateQuoteRefreshRate(rate: Int) = appSettingsDao.updateQuoteRefreshRate(rate)
     suspend fun updateLastCompletedCardIndex(index: Int) = appSettingsDao.updateLastCompletedCardIndex(index)
+    suspend fun updateFundIncrementPresets(presets: String) = appSettingsDao.updateFundIncrementPresets(presets)
+    suspend fun updateWidgetColors(c1: String, c2: String, c3: String) = appSettingsDao.updateWidgetColors(c1, c2, c3)
+    suspend fun updateWidgetTextColors(tc1: String, tc2: String, tc3: String) = appSettingsDao.updateWidgetTextColors(tc1, tc2, tc3)
     
     // 待辦事項相關
     suspend fun addTodo(item: TodoItem) = todoDao.insertTodo(item)
@@ -28,8 +31,10 @@ class AppRepository(
 
     // 常用原因相關
     suspend fun addCommonReason(reason: CommonReason) = commonReasonDao.insertCommonReason(reason)
+    suspend fun updateCommonReason(reason: CommonReason) = commonReasonDao.updateCommonReason(reason)
     suspend fun deleteCommonReason(reason: CommonReason) = commonReasonDao.deleteCommonReason(reason)
     suspend fun incrementCommonReasonUsage(id: Int) = commonReasonDao.incrementUsageCount(id)
+    suspend fun deleteAllCommonReasons() = commonReasonDao.deleteAllCommonReasons()
     
     suspend fun addStamp(cardIndex: Int, position: Int, reason: String, isAngry: Boolean) {
         val record = StampRecord(
@@ -72,12 +77,7 @@ class AppRepository(
         appSettingsDao.deleteAllSettings()
         stampRecordDao.deleteAllRecords()
         todoDao.deleteAllTodos()
-        // 選擇性：是否要清除常用原因？ 使用者說全部重來，應該包含這個。
-        // 但 CommonReasonDao 沒有 delete all。讓我們加上 loop delete 或直接在 dao 加 query。
-        // 為了簡單，這裡暫時不清除，或者假設使用者會手動刪。但最好清掉。
-        // 由於前面沒加 delete all common reasons，這邊先跳過，或者我們可以再次修改 DAO。
-        // 考慮到「全部重來」通常指所有資料，保留著也怪怪的。
-        // 算了，先不清除這個表，因為也許這是使用者的個人詞庫。
+        commonReasonDao.deleteAllCommonReasons()
         initializeSettings()
     }
 }

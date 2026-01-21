@@ -48,6 +48,16 @@ interface AppSettingsDao {
     @Query("UPDATE app_settings SET lastCompletedCardIndex = :index WHERE id = 1")
     suspend fun updateLastCompletedCardIndex(index: Int)
     
+    @Query("UPDATE app_settings SET fundIncrementPresets = :presets WHERE id = 1")
+    suspend fun updateFundIncrementPresets(presets: String)
+    
+    @Query("UPDATE app_settings SET widgetColor1 = :c1, widgetColor2 = :c2, widgetColor3 = :c3 WHERE id = 1")
+    suspend fun updateWidgetColors(c1: String, c2: String, c3: String)
+    
+    // 待辦事項相關
+    @Query("UPDATE app_settings SET widgetTextColor1 = :tc1, widgetTextColor2 = :tc2, widgetTextColor3 = :tc3 WHERE id = 1")
+    suspend fun updateWidgetTextColors(tc1: String, tc2: String, tc3: String)
+    
     @Query("DELETE FROM app_settings")
     suspend fun deleteAllSettings()
 }

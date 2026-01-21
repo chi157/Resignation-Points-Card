@@ -19,7 +19,20 @@ data class AppSettings(
     val lastCompletedCardIndex: Int = 0, // 紀錄已完成並按過「再給一次機會」的卡片索引
     
     // 小工具設定
-    val quoteRefreshRate: Int = 1 // 單位：小時
+    val quoteRefreshRate: Int = 1, // 單位：小時
+    
+    // 金額增量預設值 (存為逗點分隔字串，例如 "500,1000,3000")
+    val fundIncrementPresets: String = "500,1000,3000",
+    
+    // 小工具自訂背景顏色 (Hex 格式)
+    val widgetColor1: String = "#2C3E50",
+    val widgetColor2: String = "#E74C3C",
+    val widgetColor3: String = "#27AE60",
+    
+    // 小工具文字顏色 (每個背景對應一個文字顏色)
+    val widgetTextColor1: String = "#FFFFFF", // 背景1的文字顏色
+    val widgetTextColor2: String = "#FFFFFF", // 背景2的文字顏色
+    val widgetTextColor3: String = "#FFFFFF"  // 背景3的文字顏色
 )
 
 @Entity(tableName = "todo_items")

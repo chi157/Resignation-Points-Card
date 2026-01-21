@@ -63,6 +63,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             launch {
                 repository.settings.collect { settings ->
                     _settings.value = settings
+                    // 自動排程小工具刷新
+                    settings?.let { 
+                        com.chi157.resignationpointscard.widget.QuoteWidgetWorker.schedule(application, it.quoteRefreshRate)
+                    }
                 }
             }
             
@@ -123,12 +127,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val exists = _allCommonReasons.value.any { it.text == text }
             if (!exists) {
                 repository.addCommonReason(CommonReason(text = text))
-            } else {
-                 val existing = _allCommonReasons.value.find { it.text == text }
-                 existing?.let { repository.incrementCommonReasonUsage(it.id) }
-            }
+            } 
         }
     }
+    
+    fun updateCommonReason(reason: CommonReason) = viewModelScope.launch { repository.updateCommonReason(reason) }
+    fun deleteCommonReason(reason: CommonReason) = viewModelScope.launch { repository.deleteCommonReason(reason) }
     
     fun incrementCommonReasonUsage(id: Int) = viewModelScope.launch { repository.incrementCommonReasonUsage(id) }
     
@@ -161,6 +165,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleResumeReady(ready: Boolean) = viewModelScope.launch { repository.updateResumeReady(ready) }
     fun saveQuoteRefreshRate(rate: Int) = viewModelScope.launch { repository.updateQuoteRefreshRate(rate) }
     fun updateLastCompletedCardIndex(index: Int) = viewModelScope.launch { repository.updateLastCompletedCardIndex(index) }
+    fun saveFundIncrementPresets(presets: String) = viewModelScope.launch { repository.updateFundIncrementPresets(presets) }
+    fun saveWidgetColors(c1: String, c2: String, c3: String) = viewModelScope.launch { repository.updateWidgetColors(c1, c2, c3) }
+    fun saveWidgetTextColors(tc1: String, tc2: String, tc3: String) = viewModelScope.launch { repository.updateWidgetTextColors(tc1, tc2, tc3) }
     
     fun addTodo(item: TodoItem) = viewModelScope.launch { repository.addTodo(item) }
     fun updateTodo(item: TodoItem) = viewModelScope.launch { repository.updateTodo(item) }
