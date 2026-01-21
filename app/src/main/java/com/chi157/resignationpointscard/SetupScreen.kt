@@ -44,21 +44,10 @@ fun SetupScreen(onConfirm: (String) -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "輸入那個...",
-            color = Color.White,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold
-        )
-        
+        // 標題部分保持原樣
+        Text(text = "輸入那個...", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
-        
-        Text(
-            text = "讓你靈魂枯竭的地方",
-            color = SoftPink,
-            fontSize = 32.sp,
-            fontWeight = FontWeight.ExtraBold
-        )
+        Text(text = "讓你靈魂枯竭的地方", color = SoftPink, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold)
 
         Spacer(modifier = Modifier.height(40.dp))
 
@@ -83,28 +72,15 @@ fun SetupScreen(onConfirm: (String) -> Unit) {
             contentAlignment = Alignment.CenterStart
         ) {
             if (companyName.isEmpty()) {
-                Text(
-                    text = "公司名稱...",
-                    color = Color.LightGray,
-                    fontSize = 18.sp
-                )
+                Text(text = "公司名稱...", color = Color.LightGray, fontSize = 18.sp)
             }
             BasicTextField(
                 value = companyName,
                 onValueChange = { companyName = it },
-                textStyle = TextStyle(
-                    color = Color.DarkGray,
-                    fontSize = 18.sp
-                ),
+                textStyle = TextStyle(color = Color.DarkGray, fontSize = 18.sp),
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Done // 設定鍵盤為「完成」按鈕
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus() // 按下 Enter/Done 時關閉鍵盤
-                    }
-                )
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
             )
         }
 
@@ -121,18 +97,9 @@ fun SetupScreen(onConfirm: (String) -> Unit) {
                 .border(2.dp, DarkGrayBorder, RoundedCornerShape(4.dp))
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "確認目標",
-                    color = DarkGrayBorder,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = "確認目標", color = DarkGrayBorder, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "➔",
-                    color = DarkGrayBorder,
-                    fontSize = 20.sp
-                )
+                Text(text = "➔", color = DarkGrayBorder, fontSize = 20.sp)
             }
         }
     }

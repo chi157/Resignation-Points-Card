@@ -111,12 +111,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val settings = _settings.value ?: return@launch
             val stamps = _allStamps.value
             
-            val totalStamps = stamps.size
-            val targetStamps = settings.targetStamps.takeIf { it > 0 } ?: 30
-            val cardIndex = (totalStamps / targetStamps) + 1
-            val position = (totalStamps % targetStamps) + 1
+            val lastCompletedIndex = settings.lastCompletedCardIndex
+            val cardIndex = lastCompletedIndex + 1
             
-            repository.addStamp(cardIndex, position, reason, isAngry)
+            // 找出當前卡片已有的印章數量
+            val stampsInCurrentCard = stamps.count { it.cardIndex == cardIndex }
+            val targetStamps = settings.targetStamps.takeIf { it > 0 } ?: 20
+            val position = stampsInCurrentCard + 1
+            
+            repository.addStamp(cardIndex, position, reason, isAngry, targetStamps)
             resetAngryCounter()
         }
     }
@@ -172,8 +175,23 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun addTodo(item: TodoItem) = viewModelScope.launch { repository.addTodo(item) }
     fun updateTodo(item: TodoItem) = viewModelScope.launch { repository.updateTodo(item) }
     fun deleteTodo(item: TodoItem) = viewModelScope.launch { repository.deleteTodo(item) }
-    fun updateStamp(record: StampRecord) = viewModelScope.launch { repository.updateStamp(record) }
-    fun deleteStamp(record: StampRecord) = viewModelScope.launch { repository.deleteStamp(record) }
+    fun updateStamp(record: StampRecord) {
+        viewModelScope.launch {
+            val settings = _settings.value ?: return@launch
+            if (!record.isLocked(settings.lastCompletedCardIndex)) {
+                repository.updateStamp(record)
+            }
+        }
+    }
+    
+    fun deleteStamp(record: StampRecord) {
+        viewModelScope.launch {
+            val settings = _settings.value ?: return@launch
+            if (!record.isLocked(settings.lastCompletedCardIndex)) {
+                repository.deleteStamp(record)
+            }
+        }
+    }
     
     fun resetAllData() {
         viewModelScope.launch {

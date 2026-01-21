@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [AppSettings::class, StampRecord::class, TodoItem::class, CommonReason::class], version = 13, exportSchema = false)
+@Database(entities = [AppSettings::class, StampRecord::class, TodoItem::class, CommonReason::class], version = 14, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun appSettingsDao(): AppSettingsDao
     abstract fun stampRecordDao(): StampRecordDao

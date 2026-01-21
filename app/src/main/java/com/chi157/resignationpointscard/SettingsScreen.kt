@@ -187,44 +187,6 @@ fun SettingsScreen(
                 shape = RoundedCornerShape(4.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // 目標格數
-                    Text("目標格數", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(bottom = 12.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp)
-                            .background(Color(0xFFF0F0F0), RoundedCornerShape(20.dp)),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val options = listOf(10, 20, 30)
-                        val current = tempTargetStamps
-                        
-                        options.forEach { option ->
-                            val isSelected = current == option
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .padding(2.dp)
-                                    .background(
-                                        if (isSelected) Color(0xFFAAB8C2) else Color.Transparent, 
-                                        RoundedCornerShape(18.dp)
-                                    )
-                                    .clickable { tempTargetStamps = option },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "$option 格",
-                                    color = if (isSelected) Color.White else Color(0xFF3498DB),
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    fontSize = 14.sp
-                                )
-                            }
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
                     // 卡片風格
                     Text("卡片風格", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(bottom = 12.dp))
                     
@@ -312,7 +274,7 @@ fun SettingsScreen(
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    Text("小工具背景顏色 (旋轉樣式)", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(bottom = 12.dp))
+                    Text("小工具背景顏色 (樣式會輪流出現)", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(bottom = 12.dp))
                     
                     var showColorPicker1 by remember { mutableStateOf(false) }
                     var showColorPicker2 by remember { mutableStateOf(false) }

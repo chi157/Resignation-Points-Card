@@ -58,40 +58,26 @@ fun MainPointsCardScreen(
     var showAngryDialog by remember { mutableStateOf(false) }
     var showSuccessAnimation by remember { mutableStateOf(false) }
     var showFullCardDialog by remember { mutableStateOf(false) }
+    var showNewCardSizeDialog by remember { mutableStateOf(false) }
 
     // 計算當前卡片資訊
-    val targetStamps = settings?.targetStamps?.takeIf { it > 0 } ?: 30
-    val totalStamps = allStamps.size
-    
-    // 計算已完成的完整卡片數 (例如 10 stamps, target 10 -> completed 1)
-    val completedCardsCount = totalStamps / targetStamps
+    val targetStamps = settings?.targetStamps?.takeIf { it > 0 } ?: 20
     val lastCompletedIndex = settings?.lastCompletedCardIndex ?: 0
     
-    // 判斷是否還有「已完成但尚未檢視/確認」的卡片
-    // 如果 completedCardsCount > lastCompletedIndex，表示有一張新滿的卡還沒被"翻頁"
-    // 但只有當剛好整除時才算是"剛滿"的狀態需要處理。
-    // 如果 totalStamps % targetStamps == 0 且 totalStamps > 0，表示當前卡片剛好滿了。
+    // 當前卡片編號
+    val currentCardIndex = lastCompletedIndex + 1
     
-    // 決定要顯示哪張卡片
-    // 如果有未確認的滿卡 (lastCompletedIndex < completedCardsCount)，顯示該張滿卡
-    // 否則顯示下一張正在進行中的卡片
-    val showFullCardReview = lastCompletedIndex < completedCardsCount
-    val currentCardIndex = if (showFullCardReview) lastCompletedIndex + 1 else completedCardsCount + 1
+    // 過濾出屬於當前卡片的印章
+    val stampsOnThisCardList = allStamps.filter { it.cardIndex == currentCardIndex }
+    val stampsOnThisCard = stampsOnThisCardList.size
     
-    // 根據顯示的卡片 Index 過濾印章
-    // 如果是看滿的那張，就是該張的所有印章。如果是看新卡，就是新卡的印章(通常是空，除非已開始蓋)
-    // 這裡邏輯要小心：allStamps 裡面的 cardIndex 是當下蓋的時候決定的。
-    // 我們的 addStamp 邏輯是：val cardIndex = (totalStamps / targetStamps) + 1。
-    // 所以第 1~10 個章，cardIndex 都是 1。
-    // 當 total = 10，showFullCardReview = true，我們想看 cardIndex = 1 的章。
-    // 當 total = 10，showFullCardReview = false (已按過)，我們想看 cardIndex = 2 的章 (目前 0 個)。
+    // 判斷當前卡片是否已滿
+    val isCardFull = stampsOnThisCard >= targetStamps
+    val showFullCardReview = isCardFull
     
-    // 改為根據總數量與目前的卡片索引來計算當前卡片的顯示印章數，避免刪除記錄造成的空洞
-    val stampsOnThisCard = if (currentCardIndex <= completedCardsCount) {
-        targetStamps
-    } else {
-        totalStamps % targetStamps
-    }
+    // 決定要顯示的印章狀態 (1..targetStamps)
+    val stampedPositions = stampsOnThisCardList.map { it.stampPosition }.toSet()
+
     
     // 解析主題
     val currentTheme = try {
@@ -196,7 +182,7 @@ fun MainPointsCardScreen(
             ) {
                 StampGrid(
                     targetStamps = targetStamps,
-                    stampedPositions = (1..stampsOnThisCard).toSet(),
+                    stampedPositions = stampedPositions,
                     theme = currentTheme
                 )
             }
@@ -315,9 +301,8 @@ fun MainPointsCardScreen(
                         // 2. 再給一次機會
                         Button(
                             onClick = { 
-                                // 更新已完成卡片索引，進入下一張卡
-                                viewModel.updateLastCompletedCardIndex(currentCardIndex)
                                 showFullCardDialog = false
+                                showNewCardSizeDialog = true
                             },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C3E50))
@@ -333,6 +318,63 @@ fun MainPointsCardScreen(
                         ) {
                             Text("取消", color = Color.Black)
                         }
+                    }
+                }
+            )
+        }
+
+        // 0.1 新卡片格數選擇彈窗
+        if (showNewCardSizeDialog) {
+            AlertDialog(
+                onDismissRequest = { showNewCardSizeDialog = false },
+                title = { Text("新卡片，新開始", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column {
+                        Text("請選擇下一張集點卡的格數：")
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .background(Color(0xFFF0F0F0), RoundedCornerShape(25.dp)),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val options = listOf(10, 20, 30)
+                            options.forEach { option ->
+                                val isSelected = (settings?.targetStamps ?: 20) == option
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .padding(4.dp)
+                                        .background(
+                                            if (isSelected) Color(0xFFAAB8C2) else Color.Transparent, 
+                                            RoundedCornerShape(21.dp)
+                                        )
+                                        .clickable { 
+                                            viewModel.saveTargetStamps(option)
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "$option 格",
+                                        color = if (isSelected) Color.White else Color(0xFF3498DB),
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.updateLastCompletedCardIndex(currentCardIndex)
+                            showNewCardSizeDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4ECDC4))
+                    ) {
+                        Text("確認建立", color = Color.White)
                     }
                 }
             )

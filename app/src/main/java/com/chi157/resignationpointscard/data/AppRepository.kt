@@ -36,10 +36,11 @@ class AppRepository(
     suspend fun incrementCommonReasonUsage(id: Int) = commonReasonDao.incrementUsageCount(id)
     suspend fun deleteAllCommonReasons() = commonReasonDao.deleteAllCommonReasons()
     
-    suspend fun addStamp(cardIndex: Int, position: Int, reason: String, isAngry: Boolean) {
+    suspend fun addStamp(cardIndex: Int, position: Int, reason: String, isAngry: Boolean, cardCapacity: Int) {
         val record = StampRecord(
             cardIndex = cardIndex,
             stampPosition = position,
+            cardCapacity = cardCapacity,
             dateMillis = System.currentTimeMillis(),
             reason = reason,
             isAngry = isAngry

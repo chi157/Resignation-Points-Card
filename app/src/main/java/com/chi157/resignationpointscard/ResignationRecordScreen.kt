@@ -62,14 +62,37 @@ fun ResignationRecordScreen(
             .maxByOrNull { it.value.size }?.key ?: "尚未有紀錄"
     }
 
-    // 依照虛擬卡片索引分組紀錄 (基於總數量與順序)
-    val stampsByCard = remember(allStamps, targetStamps) {
-        allStamps.sortedBy { it.dateMillis }
-            .withIndex()
-            .groupBy { (i, _) -> (i / targetStamps) + 1 }
-            .mapValues { it.value.map { it.value } }
+    // 依照虛擬卡片索引分組紀錄
+    val stampsByCard = remember(allStamps) {
+        allStamps.groupBy { it.cardIndex }
             .toSortedMap(compareByDescending { it })
     }
+
+    // 計算自定義的圓餅圖數據
+
+
+    // 計算自定義的圓餅圖數據
+    val chartData = remember(allStamps) {
+        val stats = allStamps.groupBy { it.reason }
+            .map { it.key to it.value.size }
+            .sortedByDescending { it.second }
+        
+        if (stats.size <= 4) {
+            stats
+        } else {
+            val top3 = stats.take(3)
+            val othersCount = stats.drop(3).sumOf { it.second }
+            top3 + ("其他" to othersCount)
+        }
+    }
+
+    val chartColors = listOf(
+        Color(0xFF3498DB), // 藍
+        Color(0xFFE74C3C), // 紅
+        Color(0xFF2ECC71), // 綠
+        Color(0xFFF1C40F), // 黃
+        Color(0xFF9B59B6), // 紫
+    )
 
     Scaffold(
         bottomBar = {
@@ -124,7 +147,31 @@ fun ResignationRecordScreen(
                         }
                     }
 
-                    // 2. 最常見原因卡片
+                    // 2. 原因統計圓餅圖
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF34495E)),
+                            shape = RoundedCornerShape(4.dp),
+                            border = BorderStroke(1.dp, Color(0xFF5D6D7E))
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Share, contentDescription = null, tint = Color(0xFF3498DB), modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(text = "離職原因分佈", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                }
+                                
+                                ReasonPieChart(
+                                    data = chartData,
+                                    colors = chartColors,
+                                    modifier = Modifier.padding(top = 16.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // 3. 最常見原因卡片
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -150,12 +197,14 @@ fun ResignationRecordScreen(
 
                     // 3. 遍歷每一張卡片的紀錄
                     stampsByCard.forEach { (cardIndex, stamps) ->
+                        val capacity = stamps.firstOrNull()?.cardCapacity ?: 30
                         item {
-                            CardHeader(cardIndex = cardIndex, count = stamps.size)
+                            CardHeader(cardIndex = cardIndex, count = stamps.size, capacity = capacity)
                         }
                         items(stamps.sortedByDescending { it.dateMillis }) { record ->
                             RecordItem(
                                 record = record,
+                                isLocked = record.isLocked(settings?.lastCompletedCardIndex ?: 0),
                                 onEdit = {
                                     editingRecord = record
                                     showEditDialog = true
@@ -241,7 +290,7 @@ fun StatCard(
 }
 
 @Composable
-fun CardHeader(cardIndex: Int, count: Int) {
+fun CardHeader(cardIndex: Int, count: Int, capacity: Int = 30) {
     Surface(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp).border(2.dp, Color(0xFF3498DB), RoundedCornerShape(4.dp)),
         color = Color(0xFF2C3E50),
@@ -262,21 +311,31 @@ fun CardHeader(cardIndex: Int, count: Int) {
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(text = "第 $cardIndex 張卡", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Text(text = "初次萌生退意", color = Color.Gray, fontSize = 11.sp)
+                    Text(text = "卡片容量: $capacity", color = Color.Gray, fontSize = 11.sp)
                 }
             }
             Box(
-                modifier = Modifier.size(32.dp).background(Color(0xFF3498DB), CircleShape),
+                modifier = Modifier
+                    .height(32.dp)
+                    .widthIn(min = 32.dp)
+                    .background(Color(0xFF3498DB), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "$count", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "$count/$capacity", 
+                    color = Color.White, 
+                    fontSize = 12.sp, 
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
             }
         }
     }
 }
 
 @Composable
-fun RecordItem(record: StampRecord, onEdit: () -> Unit) {
+fun RecordItem(record: StampRecord, isLocked: Boolean, onEdit: () -> Unit) {
     val dateSdf = SimpleDateFormat("MMMM\ndd, yyyy", Locale.ENGLISH)
     val timeSdf = SimpleDateFormat("hh:mm a", Locale.ENGLISH)
     val date = Date(record.dateMillis)
@@ -304,8 +363,17 @@ fun RecordItem(record: StampRecord, onEdit: () -> Unit) {
                 fontWeight = FontWeight.Medium
             )
 
-            IconButton(onClick = onEdit, modifier = Modifier.size(24.dp)) {
-                Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFF3498DB), modifier = Modifier.size(18.dp))
+            if (!isLocked) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFF3498DB), modifier = Modifier.size(18.dp))
+                }
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = "已鎖定",
+                    tint = Color.LightGray,
+                    modifier = Modifier.size(18.dp).padding(4.dp)
+                )
             }
         }
     }
@@ -500,6 +568,76 @@ fun EditRecordDialog(
                     }
                     Spacer(modifier = Modifier.height(24.dp))
                 }
+        }
+    }
+}
+@Composable
+fun ReasonPieChart(
+    data: List<Pair<String, Int>>,
+    colors: List<Color>,
+    modifier: Modifier = Modifier
+) {
+    val total = data.sumOf { it.second }.toFloat()
+    if (total == 0f) return
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Canvas(modifier = Modifier.size(120.dp)) {
+            var startAngle = -90f
+            data.forEachIndexed { index, pair ->
+                val sweepAngle = (pair.second / total) * 360f
+                drawArc(
+                    color = colors[index % colors.size],
+                    startAngle = startAngle,
+                    sweepAngle = sweepAngle,
+                    useCenter = true
+                )
+                startAngle += sweepAngle
+            }
+            // 繪製中間的圓洞，製作成甜甜圈圖案
+            drawCircle(
+                color = Color(0xFF34495E),
+                radius = size.minDimension / 4f
+            )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            data.forEachIndexed { index, (reason, count) ->
+                val percentage = (count / total * 100).toInt()
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(colors[index % colors.size], CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = reason,
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = "$percentage%",
+                        color = Color.LightGray,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                }
+            }
         }
     }
 }
