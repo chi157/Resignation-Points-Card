@@ -11,6 +11,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,6 +34,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.input.ImeAction
 import com.chi157.resignationpointscard.data.StampRecord
+import com.chi157.resignationpointscard.data.CommonReason
 import com.chi157.resignationpointscard.ui.theme.DarkBlueBackground
 import java.text.SimpleDateFormat
 import java.util.*
@@ -47,6 +51,7 @@ fun MainPointsCardScreen(
     val isStampedToday by viewModel.isStampedToday.collectAsState()
     val angryCounter by viewModel.angryCounter.collectAsState()
 
+    val commonReasonsList by viewModel.allCommonReasons.collectAsState()
     
     var showStampDialog by remember { mutableStateOf(false) }
     var showAngryDialog by remember { mutableStateOf(false) }
@@ -261,9 +266,9 @@ fun MainPointsCardScreen(
                             .fillMaxWidth()
                             .height(60.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (angryCounter >= 5) Color(0xFFE74C3C) else Color(0xFF2C3E50),
-                            contentColor = Color.White
-                        ),
+                        containerColor = if (angryCounter >= 5) Color(0xFFE74C3C) else currentTheme.buttonColor,
+                        contentColor = if (currentTheme == CardTheme.SYSTEM_ERROR && angryCounter < 5) Color.Black else Color.White
+                    ),
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         val btnText = if (angryCounter >= 5) "蓋章發洩！" else "✔ 我要蓋章"
@@ -359,6 +364,39 @@ fun MainPointsCardScreen(
                     ) {
                         Text("為什麼今日想離職？", fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
                         var reasonText by remember { mutableStateOf("") }
+                        var isExpanded by remember { mutableStateOf(false) }
+                        var addToCommonReasons by remember { mutableStateOf(false) }
+                        
+                        // 常用原因選單
+                        if (commonReasonsList.isNotEmpty()) {
+                             Box(modifier = Modifier.fillMaxWidth()) {
+                                OutlinedButton(
+                                    onClick = { isExpanded = !isExpanded },
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                                ) {
+                                    Text("選擇常用原因...")
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                                }
+                                
+                                DropdownMenu(
+                                    expanded = isExpanded,
+                                    onDismissRequest = { isExpanded = false },
+                                    modifier = Modifier.fillMaxWidth(0.7f) // 稍微縮限寬度，避免跑版
+                                ) {
+                                    commonReasonsList.forEach { reason ->
+                                        DropdownMenuItem(
+                                            text = { Text(reason.text) },
+                                            onClick = {
+                                                reasonText = reason.text
+                                                isExpanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                             }
+                        }
+
                         OutlinedTextField(
                             value = reasonText,
                             onValueChange = { reasonText = it },
@@ -368,11 +406,31 @@ fun MainPointsCardScreen(
                             keyboardActions = KeyboardActions(onDone = { hideKeyboard() })
                         )
                         
+                        // 加入常用原因選項 (僅當文字不為空且不在列表中時顯示)
+                        val isKnownReason = commonReasonsList.any { it.text == reasonText }
+                        if (reasonText.isNotBlank() && !isKnownReason) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .padding(top = 8.dp)
+                                    .clickable { addToCommonReasons = !addToCommonReasons }
+                            ) {
+                                Checkbox(
+                                    checked = addToCommonReasons,
+                                    onCheckedChange = { addToCommonReasons = it }
+                                )
+                                Text("加入常用蓋章原因", fontSize = 14.sp)
+                            }
+                        }
+                        
                         Row(modifier = Modifier.padding(top = 16.dp)) {
                             Button(
                                 onClick = {
                                     hideKeyboard()
                                     viewModel.addStamp(reasonText)
+                                    if (addToCommonReasons && reasonText.isNotBlank()) {
+                                        viewModel.addCommonReason(reasonText)
+                                    }
                                     showStampDialog = false
                                     showSuccessAnimation = true
                                 },

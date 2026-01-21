@@ -10,6 +10,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,6 +44,7 @@ fun ResignationRecordScreen(
     navController: androidx.navigation.NavHostController
 ) {
     val allStamps by viewModel.allStamps.collectAsState()
+    val commonReasonsList by viewModel.allCommonReasons.collectAsState()
     
     var editingRecord by remember { mutableStateOf<StampRecord?>(null) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -169,7 +173,9 @@ fun ResignationRecordScreen(
                 onDelete = {
                     viewModel.deleteStamp(editingRecord!!)
                     showEditDialog = false
-                }
+                },
+                commonReasons = commonReasonsList,
+                onAddCommonReason = { viewModel.addCommonReason(it) }
             )
         }
     }
@@ -279,9 +285,14 @@ fun EditRecordDialog(
     record: StampRecord,
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    commonReasons: List<com.chi157.resignationpointscard.data.CommonReason>,
+    onAddCommonReason: (String) -> Unit
 ) {
     var reason by remember { mutableStateOf(record.reason) }
+    var addToCommonReasons by remember { mutableStateOf(false) }
+    var isExpanded by remember { mutableStateOf(false) }
+
     val dateSdf = SimpleDateFormat("MMMM dd, yyyy", Locale.ENGLISH)
     val timeSdf = SimpleDateFormat("HH:mm a", Locale.ENGLISH)
     val date = Date(record.dateMillis)
@@ -325,7 +336,12 @@ fun EditRecordDialog(
                         }
                         Text("編輯紀錄", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                         Button(
-                            onClick = { onSave(reason) },
+                            onClick = { 
+                                onSave(reason)
+                                if (addToCommonReasons && reason.isNotBlank()) {
+                                    onAddCommonReason(reason)
+                                }
+                            },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD166)),
                             shape = RoundedCornerShape(20.dp),
                             contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)
@@ -357,6 +373,39 @@ fun EditRecordDialog(
 
                     Text(text = "蓋章原因", color = Color.Gray, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // 常用原因選單
+                    if (commonReasons.isNotEmpty()) {
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedButton(
+                                onClick = { isExpanded = !isExpanded },
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text("選擇常用原因...")
+                                Spacer(modifier = Modifier.weight(1f))
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                            }
+                            
+                            DropdownMenu(
+                                expanded = isExpanded,
+                                onDismissRequest = { isExpanded = false },
+                                modifier = Modifier.fillMaxWidth(0.7f)
+                            ) {
+                                commonReasons.forEach { commonReason ->
+                                    DropdownMenuItem(
+                                        text = { Text(commonReason.text) },
+                                        onClick = {
+                                            reason = commonReason.text
+                                            isExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
 
                     // 輸入框
                     Surface(
@@ -375,6 +424,28 @@ fun EditRecordDialog(
                                 hideKeyboard()
                             })
                         )
+                    }
+                    
+                    // 加入常用列表 Checkbox
+                    val isKnownReason = commonReasons.any { it.text == reason }
+                    if (reason.isNotBlank() && !isKnownReason) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .padding(top = 8.dp)
+                                .clickable { addToCommonReasons = !addToCommonReasons }
+                        ) {
+                            Checkbox(
+                                checked = addToCommonReasons,
+                                onCheckedChange = { addToCommonReasons = it },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = Color(0xFFFFD166),
+                                    uncheckedColor = Color.White,
+                                    checkmarkColor = Color.Black
+                                )
+                            )
+                            Text("加入常用蓋章原因", fontSize = 14.sp, color = Color.White)
+                        }
                     }
 
                     Spacer(modifier = Modifier.weight(1f))

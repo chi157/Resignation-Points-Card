@@ -8,6 +8,7 @@ import com.chi157.resignationpointscard.data.AppRepository
 import com.chi157.resignationpointscard.data.AppSettings
 import com.chi157.resignationpointscard.data.StampRecord
 import com.chi157.resignationpointscard.data.TodoItem
+import com.chi157.resignationpointscard.data.CommonReason
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,12 +42,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _allTodos = MutableStateFlow<List<TodoItem>>(emptyList())
     val allTodos: StateFlow<List<TodoItem>> = _allTodos.asStateFlow()
     
+    // 常用原因
+    private val _allCommonReasons = MutableStateFlow<List<CommonReason>>(emptyList())
+    val allCommonReasons: StateFlow<List<CommonReason>> = _allCommonReasons.asStateFlow()
+    
     init {
         val database = AppDatabase.getDatabase(application)
         repository = AppRepository(
             database.appSettingsDao(), 
             database.stampRecordDao(),
-            database.todoDao()
+            database.todoDao(),
+            database.commonReasonDao()
         )
         
         // 初始化設定
@@ -70,6 +76,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             
             launch {
                 repository.allTodos.collect { _allTodos.value = it }
+            }
+            
+            launch {
+                repository.allCommonReasons.collect { _allCommonReasons.value = it }
             }
         }
     }
@@ -106,6 +116,21 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             resetAngryCounter()
         }
     }
+    
+    fun addCommonReason(text: String) {
+        viewModelScope.launch {
+            // 避免重複
+            val exists = _allCommonReasons.value.any { it.text == text }
+            if (!exists) {
+                repository.addCommonReason(CommonReason(text = text))
+            } else {
+                 val existing = _allCommonReasons.value.find { it.text == text }
+                 existing?.let { repository.incrementCommonReasonUsage(it.id) }
+            }
+        }
+    }
+    
+    fun incrementCommonReasonUsage(id: Int) = viewModelScope.launch { repository.incrementCommonReasonUsage(id) }
     
     fun saveCompanyName(name: String) {
         viewModelScope.launch {
